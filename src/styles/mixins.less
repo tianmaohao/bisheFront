@@ -1,0 +1,73 @@
+// 清除浮动
+.clearfix() {
+  &::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+}
+
+// 文本省略
+.text-ellipsis() {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 多行文本省略
+.text-ellipsis-multi(@lines: 2) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: @lines;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// 居中布局
+.flex-center() {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// 垂直居中
+.flex-vertical-center() {
+  display: flex;
+  align-items: center;
+}
+
+// 水平居中
+.flex-horizontal-center() {
+  display: flex;
+  justify-content: center;
+}
+
+// 卡片样式
+.card() {
+  background: @bg-color;
+  border-radius: @border-radius-base;
+  box-shadow: @box-shadow-base;
+  padding: @spacing-lg;
+}
+
+// 滚动条样式
+.scrollbar() {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: @border-color-base;
+    border-radius: 3px;
+    
+    &:hover {
+      background: @text-color-secondary;
+    }
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: @border-color-lighter;
+  }
+}
+
