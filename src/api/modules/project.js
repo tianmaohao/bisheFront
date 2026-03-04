@@ -18,6 +18,14 @@ export const projectApi = {
       method: 'get'
     })
   },
+
+  // 获取项目完整详情（包含节点、任务、日志等）
+  getProjectFullDetail(id) {
+    return request({
+      url: `/project/${id}/full-detail`,
+      method: 'get'
+    })
+  },
   
   // 创建项目
   createProject(data) {

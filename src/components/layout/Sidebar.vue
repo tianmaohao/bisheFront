@@ -1,4 +1,3 @@
-
 <template>
   <el-scrollbar>
     <el-menu
@@ -8,7 +7,6 @@
         background-color="#304156"
         text-color="#bfcbd9"
         active-text-color="#409EFF"
-        router
     >
       <template v-for="route in menuRoutes" :key="route.path">
         <el-menu-item
@@ -34,7 +32,8 @@
           <el-menu-item
               v-for="child in route.children"
               :key="child.path"
-              :index="route.path.startsWith('/') ? route.path + '/' + child.path : '/' + route.path + '/' + child.path"
+              :index="getChildMenuPath(route.path, child.path)"
+              @click="handleMenuClick(getChildMenuPath(route.path, child.path))"
           >
             {{ child.meta.title }}
           </el-menu-item>
@@ -63,11 +62,32 @@ const isCollapse = computed(() => appStore.sidebarCollapse)
 
 const activeMenu = computed(() => {
   const { path } = route
+  // 处理项目详情的特殊情况
   if (path.startsWith('/project/detail')) {
     return '/project/list'
   }
+  // 处理用户详情的特殊情况
+  if (path.startsWith('/user/detail')) {
+    return '/user/list'
+  }
   return path
 })
+
+// 生成子菜单路径的辅助函数
+const getChildMenuPath = (parentPath, childPath) => {
+  if (parentPath.startsWith('/')) {
+    return parentPath + '/' + childPath
+  }
+  return '/' + parentPath + '/' + childPath
+}
+
+// 处理菜单点击
+const handleMenuClick = (path) => {
+  console.log('Menu clicked, navigating to:', path)
+  router.push(path).catch(err => {
+    console.error('Navigation error:', err)
+  })
+}
 
 const menuRoutes = computed(() => {
   const mainRoute = routes.find(route => route.path === '/')
@@ -91,4 +111,3 @@ const menuRoutes = computed(() => {
   background-color: rgba(64, 158, 255, 0.1) !important;
 }
 </style>
-

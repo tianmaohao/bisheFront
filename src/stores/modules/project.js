@@ -5,6 +5,7 @@ export const useProjectStore = defineStore('project', {
   state: () => ({
     projectList: [],
     currentProject: null,
+    currentProjectFullDetail: null,
     statistics: null,
     onTimeDeliveryRate: null
   }),
@@ -44,6 +45,21 @@ export const useProjectStore = defineStore('project', {
         const res = await projectApi.getProjectDetail(id)
         if (res.data) {
           this.currentProject = res.data
+        }
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+
+    // 获取项目完整详情（包含节点、任务、日志等）
+    async fetchProjectFullDetail(id) {
+      try {
+        const res = await projectApi.getProjectFullDetail(id)
+        if (res.data) {
+          this.currentProjectFullDetail = res.data
+          // 同步基础项目信息，方便复用
+          this.currentProject = res.data.project || null
         }
         return res
       } catch (error) {

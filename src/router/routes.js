@@ -1,4 +1,4 @@
-// 路由配置
+// src/router/routes.js
 const routes = [
   {
     path: '/login',
@@ -59,6 +59,77 @@ const routes = [
         ]
       },
       {
+        path: 'user',
+        name: 'UserManage',
+        redirect: '/user/list',
+        meta: {
+          title: '人员管理',
+          requiresAuth: true,
+          icon: 'User'
+        },
+        children: [
+          {
+            path: 'list',
+            name: 'UserList',
+            component: () => import('@/views/user/List.vue'),
+            meta: {
+              title: '人员列表',
+              requiresAuth: true
+            }
+          },
+          {
+            path: 'detail/:id',
+            name: 'UserDetail',
+            component: () => import('@/views/user/Detail.vue'),
+            meta: {
+              title: '人员详情',
+              requiresAuth: true,
+              activeMenu: '/user/list'
+            }
+          }
+        ]
+      },
+      {
+        path: 'task',
+        name: 'Task',
+        redirect: '/task/todo',
+        meta: {
+          title: '任务中心',
+          requiresAuth: true,
+          icon: 'List'
+        },
+        children: [
+          {
+            path: 'todo',
+            name: 'TaskTodo',
+            component: () => import('@/views/task/Todo.vue'),
+            meta: {
+              title: '待办任务',
+              requiresAuth: true
+            }
+          },
+          {
+            path: 'done',
+            name: 'TaskDone',
+            component: () => import('@/views/task/Done.vue'),
+            meta: {
+              title: '已办任务',
+              requiresAuth: true
+            }
+          }
+        ]
+      },
+      {
+        path: 'task-statistics',
+        name: 'TaskStatistics',
+        component: () => import('@/views/statistics/Task.vue'),
+        meta: {
+          title: '任务统计',
+          requiresAuth: true,
+          icon: 'PieChart'
+        }
+      },
+      {
         path: 'push',
         name: 'Push',
         redirect: '/push/config',
@@ -112,4 +183,3 @@ const routes = [
 ]
 
 export default routes
-

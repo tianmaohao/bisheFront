@@ -1,48 +1,42 @@
+// src/api/modules/user.js
 import request from '../index'
 
-// 用户相关API
 export const userApi = {
-  // 登录
-  login(data) {
+  // 登录/登出/当前用户信息 省略...
+
+  // 用户列表（后台目前返回 List，可在前端分页）
+  getUserList(data) {
     return request({
-      url: '/auth/login',
+      url: '/user/list',
       method: 'post',
       data
     })
   },
-  
-  // 登出
-  logout() {
+
+  // 获取指定用户详情
+  getUserById(userId) {
     return request({
-      url: '/auth/logout',
-      method: 'post'
+      url: '/user/get',
+      method: 'get',
+      params: { userId }
     })
   },
-  
-  // 获取用户信息
-  getUserInfo() {
+
+  // 新增或更新用户
+  addOrUpdateUser(data) {
     return request({
-      url: '/user/info',
-      method: 'get'
-    })
-  },
-  
-  // 更新用户信息
-  updateUserInfo(data) {
-    return request({
-      url: '/user/info',
-      method: 'put',
+      url: '/user/addOrUpdate',
+      method: 'post',
       data
     })
   },
-  
-  // 修改密码
-  changePassword(data) {
+
+  // 删除用户
+  deleteUser(userId) {
     return request({
-      url: '/user/password',
-      method: 'put',
-      data
+      url: '/user/delete',
+      method: 'delete',
+      params: { userId }
     })
   }
 }
-
