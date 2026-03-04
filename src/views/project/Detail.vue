@@ -13,7 +13,7 @@
           </el-button>
         </div>
       </template>
-      
+
       <div v-if="project" class="detail-content">
         <!-- 基本信息 -->
         <el-descriptions title="基本信息" :column="2" border>
@@ -41,7 +41,7 @@
             {{ project.description }}
           </el-descriptions-item>
         </el-descriptions>
-        
+
         <!-- 状态流转操作 -->
         <div class="status-actions" v-if="canOperate">
           <el-divider>状态操作</el-divider>
@@ -137,7 +137,7 @@ const handleReturn = async () => {
       inputType: 'textarea',
       inputPlaceholder: '请输入退回原因'
     })
-    
+
     await projectStore.returnProject(project.value.id, value)
     ElMessage.success('项目已退回')
     fetchProjectDetail()
@@ -164,7 +164,7 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
   }
-  
+
   .detail-content {
     .status-actions {
       margin-top: 20px;

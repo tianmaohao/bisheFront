@@ -1,39 +1,40 @@
+
 <template>
   <el-scrollbar>
     <el-menu
-      :default-active="activeMenu"
-      :collapse="isCollapse"
-      :collapse-transition="false"
-      background-color="#304156"
-      text-color="#bfcbd9"
-      active-text-color="#409EFF"
-      router
+        :default-active="activeMenu"
+        :collapse="isCollapse"
+        :collapse-transition="false"
+        background-color="#304156"
+        text-color="#bfcbd9"
+        active-text-color="#409EFF"
+        router
     >
-      <template v-for="route in routes" :key="route.path">
+      <template v-for="route in menuRoutes" :key="route.path">
         <el-menu-item
-          v-if="!route.children && !route.meta.hidden"
-          :index="route.path"
+            v-if="!route.children && !route.meta?.hidden"
+            :index="route.path.startsWith('/') ? route.path : '/' + route.path"
         >
-          <el-icon v-if="route.meta.icon">
+          <el-icon v-if="route.meta?.icon">
             <component :is="route.meta.icon" />
           </el-icon>
           <template #title>{{ route.meta.title }}</template>
         </el-menu-item>
-        
+
         <el-sub-menu
-          v-else-if="route.children && !route.meta.hidden"
-          :index="route.path"
+            v-else-if="route.children && !route.meta?.hidden"
+            :index="route.path.startsWith('/') ? route.path : '/' + route.path"
         >
           <template #title>
-            <el-icon v-if="route.meta.icon">
+            <el-icon v-if="route.meta?.icon">
               <component :is="route.meta.icon" />
             </el-icon>
             <span>{{ route.meta.title }}</span>
           </template>
           <el-menu-item
-            v-for="child in route.children"
-            :key="child.path"
-            :index="child.path"
+              v-for="child in route.children"
+              :key="child.path"
+              :index="route.path.startsWith('/') ? route.path + '/' + child.path : '/' + route.path + '/' + child.path"
           >
             {{ child.meta.title }}
           </el-menu-item>
@@ -43,8 +44,7 @@
   </el-scrollbar>
 </template>
 
-<script setup>
-import { computed } from 'vue'
+<script setup>import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/modules/app'
 import {
@@ -53,6 +53,7 @@ import {
   Upload,
   DataBoard
 } from '@element-plus/icons-vue'
+import routes from '@/router/routes'
 
 const route = useRoute()
 const router = useRouter()
@@ -68,11 +69,9 @@ const activeMenu = computed(() => {
   return path
 })
 
-// 获取路由配置
-const routes = computed(() => {
-  return router.getRoutes().filter(route => {
-    return route.path === '/' && route.children
-  })[0]?.children || []
+const menuRoutes = computed(() => {
+  const mainRoute = routes.find(route => route.path === '/')
+  return mainRoute?.children || []
 })
 </script>
 
