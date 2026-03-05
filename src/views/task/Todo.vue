@@ -51,6 +51,12 @@
             <template #default="{ row }">
               <span :class="{ danger: isNearOrTimeout(row) }">
                 {{ formatDate(row.deadline) }}
+                <el-tag v-if="isTimeout(row)" type="danger" size="small">
+                  已超时
+                </el-tag>
+                <el-tag v-else-if="isNearDeadline(row)" type="warning" size="small">
+                  即将到期
+                </el-tag>
               </span>
             </template>
           </el-table-column>
@@ -176,14 +182,7 @@
     ElMessage.success('任务已退回')
     fetchList()
   }
-  
-  const isNearOrTimeout = (row) => {
-    if (!row.deadline) return false
-    const deadline = new Date(row.deadline).getTime()
-    const now = Date.now()
-    const oneHour = 60 * 60 * 1000
-    return deadline < now || deadline - now <= oneHour
-  }
+
   
   const taskStatusText = (status, timeoutFlag) => {
     if (timeoutFlag === 1) return '即将/已超时'
@@ -195,6 +194,29 @@
       timeout: '已超时'
     }
     return map[status] || status || '-'
+  }
+
+  const isNearOrTimeout = (row) => {
+    if (!row.deadline) return false
+    const deadline = new Date(row.deadline).getTime()
+    const now = Date.now()
+    const oneHour = 60 * 60 * 1000
+    return deadline < now || deadline - now <= oneHour
+  }
+
+  const isTimeout = (row) => {
+    if (!row.deadline) return false
+    const deadline = new Date(row.deadline).getTime()
+    const now = Date.now()
+    return deadline < now
+  }
+
+  const isNearDeadline = (row) => {
+    if (!row.deadline) return false
+    const deadline = new Date(row.deadline).getTime()
+    const now = Date.now()
+    const oneHour = 60 * 60 * 1000
+    return deadline >= now && deadline - now <= oneHour
   }
   
   onMounted(fetchList)
@@ -217,6 +239,7 @@
     }
     .danger {
       color: @danger-color;
+      font-weight: bold;
     }
   }
   </style>

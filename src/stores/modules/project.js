@@ -26,101 +26,79 @@ export const useProjectStore = defineStore('project', {
   },
   
   actions: {
-    // 获取项目列表
     async fetchProjectList(params) {
-      try {
-        const res = await projectApi.getProjectList(params)
-        if (res.data) {
-          this.projectList = res.data.list || []
-        }
-        return res
-      } catch (error) {
-        throw error
+      const res = await projectApi.getProjectList(params)
+      if (res.data) {
+        this.list = res.data.list || []
+        this.total = res.data.total || 0
       }
-    },
-    
-    // 获取项目详情
-    async fetchProjectDetail(id) {
-      try {
-        const res = await projectApi.getProjectDetail(id)
-        if (res.data) {
-          this.currentProject = res.data
-        }
-        return res
-      } catch (error) {
-        throw error
-      }
+      return res
     },
 
-    // 获取项目完整详情（包含节点、任务、日志等）
+    async fetchProjectDetail(id) {
+      const res = await projectApi.getProjectDetail(id)
+      if (res.data) {
+        this.currentProject = res.data
+      }
+      return res
+    },
+
     async fetchProjectFullDetail(id) {
-      try {
-        const res = await projectApi.getProjectFullDetail(id)
-        if (res.data) {
-          this.currentProjectFullDetail = res.data
-          // 同步基础项目信息，方便复用
-          this.currentProject = res.data.project || null
-        }
-        return res
-      } catch (error) {
-        throw error
+      const res = await projectApi.getProjectFullDetail(id)
+      if (res.data) {
+        this.currentProjectFullDetail = res.data
       }
+      return res
     },
-    
-    // 创建项目
+
     async createProject(data) {
-      try {
-        const res = await projectApi.createProject(data)
-        return res
-      } catch (error) {
-        throw error
-      }
+      return projectApi.createProject(data)
     },
-    
-    // 更新项目
+
     async updateProject(id, data) {
-      try {
-        const res = await projectApi.updateProject(id, data)
-        if (res.data && this.currentProject?.id === id) {
-          this.currentProject = { ...this.currentProject, ...res.data }
-        }
-        return res
-      } catch (error) {
-        throw error
-      }
+      return projectApi.updateProject(id, data)
     },
-    
-    // 更新项目状态
-    async updateProjectStatus(id, status, reason) {
-      try {
-        const res = await projectApi.updateProjectStatus(id, status, reason)
-        return res
-      } catch (error) {
-        throw error
-      }
-    },
-    
-    // 退回项目
-    async returnProject(id, reason) {
-      try {
-        const res = await projectApi.returnProject(id, reason)
-        return res
-      } catch (error) {
-        throw error
-      }
-    },
-    
-    // 删除项目
+
     async deleteProject(id) {
-      try {
-        const res = await projectApi.deleteProject(id)
-        // 从列表中移除
-        this.projectList = this.projectList.filter(p => p.id !== id)
-        return res
-      } catch (error) {
-        throw error
-      }
+      return projectApi.deleteProject(id)
     },
+
+    async updateProjectStatus(id, status, reason) {
+      return projectApi.updateProjectStatus(id, status, reason)
+    },
+
+    async returnProject(id, reason) {
+      return projectApi.returnProject(id, reason)
+    },
+
+    async fetchProjectStatistics(params) {
+      return projectApi.getProjectStatistics(params)
+    },
+
+    async fetchOnTimeDeliveryRate(params) {
+      return projectApi.getOnTimeDeliveryRate(params)
+    },
+
+    async createProjectNode(data) {
+      return projectApi.createProjectNode(data)
+    },
+
+    async updateProjectNode(id, data) {
+      return projectApi.updateProjectNode(id, data)
+    },
+
+    async deleteProjectNode(id) {
+      return projectApi.deleteProjectNode(id)
+    },
+
+    async fetchProjectNodeList(params) {
+      const res = await projectApi.getProjectNodeList(params)
+      if (res.data) {
+        return res.data
+      }
+      return res
+    },
+
     
     // 获取项目统计
     async fetchStatistics(params) {
@@ -128,19 +106,6 @@ export const useProjectStore = defineStore('project', {
         const res = await projectApi.getProjectStatistics(params)
         if (res.data) {
           this.statistics = res.data
-        }
-        return res
-      } catch (error) {
-        throw error
-      }
-    },
-    
-    // 获取按期交付率
-    async fetchOnTimeDeliveryRate(params) {
-      try {
-        const res = await projectApi.getOnTimeDeliveryRate(params)
-        if (res.data) {
-          this.onTimeDeliveryRate = res.data
         }
         return res
       } catch (error) {

@@ -74,7 +74,7 @@ export const useUserStore = defineStore('user', {
         throw error
       }
     },
-    
+
     // 更新用户信息
     async updateUserInfo(data) {
       try {
@@ -83,6 +83,16 @@ export const useUserStore = defineStore('user', {
           this.userInfo = { ...this.userInfo, ...res.data }
           setUserInfo(this.userInfo)
         }
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+
+    // 获取用户列表
+    async fetchUserList(data) {
+      try {
+        const res = await userApi.getUserList(data)
         return res
       } catch (error) {
         throw error

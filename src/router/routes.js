@@ -117,6 +117,16 @@ const routes = [
               title: '已办任务',
               requiresAuth: true
             }
+          },
+          {
+            path: 'rate',
+            name: 'TaskRate',
+            component: () => import('@/views/task/TaskRate.vue'),
+            meta: {
+              title: '我的任务分布',
+              requiresAuth: true,
+              icon: 'PieChart'
+            }
           }
         ]
       },

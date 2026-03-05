@@ -87,5 +87,56 @@ export const projectApi = {
       method: 'get',
       params
     })
+  },
+
+  // 创建项目节点
+  createProjectNode(data) {
+    return request({
+      url: '/api/project-node',
+      method: 'post',
+      data
+    })
+  },
+
+  // 获取项目节点详情
+  getProjectNodeDetail(id) {
+    return request({
+      url: `/api/project-node/${id}`,
+      method: 'get'
+    })
+  },
+
+  // 获取项目节点列表
+  getProjectNodeList(params) {
+    return request({
+      url: '/api/project-node/list',
+      method: 'get',
+      params
+    })
+  },
+
+  // 更新项目节点
+  updateProjectNode(id, data) {
+    return request({
+      url: `/api/project-node/${id}`,
+      method: 'put',
+      data
+    })
+  },
+
+  // 删除项目节点
+  deleteProjectNode(id) {
+    return request({
+      url: `/api/project-node/${id}`,
+      method: 'delete'
+    })
+  },
+
+  // 根据项目 ID 获取所有节点
+  getNodesByProjectId(projectId) {
+    return request({
+      url: `/api/project-node/project/${projectId}`,
+      method: 'get'
+    })
   }
 }
