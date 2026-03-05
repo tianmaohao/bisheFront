@@ -5,7 +5,7 @@ export const taskApi = {
   // 分页查询任务列表（用于待办/已办）
   getTaskList(params) {
     return request({
-      url: '/task/list',
+      url: '/api/task/list',
       method: 'get',
       params
     })
@@ -14,7 +14,7 @@ export const taskApi = {
   // 获取当前登录用户的所有任务（如需）
   getMyTasks() {
     return request({
-      url: '/task/my-tasks',
+      url: '/api/task/my-tasks',
       method: 'get'
     })
   },
@@ -22,7 +22,7 @@ export const taskApi = {
   // 完成任务
   completeTask(id) {
     return request({
-      url: `/task/${id}/complete`,
+      url: `/api/task/${id}/complete`,
       method: 'post'
     })
   },
@@ -30,7 +30,7 @@ export const taskApi = {
   // 退回任务
   rejectTask(id, reason) {
     return request({
-      url: `/task/${id}/reject`,
+      url: `/api/task/${id}/reject`,
       method: 'post',
       params: { reason }
     })
