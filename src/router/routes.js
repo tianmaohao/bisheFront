@@ -77,17 +77,18 @@ const routes = [
               requiresAuth: true
             }
           },
-          {
-            path: 'detail/:id',
-            name: 'UserDetail',
-            component: () => import('@/views/user/Detail.vue'),
-            meta: {
-              title: '人员详情',
-              requiresAuth: true,
-              activeMenu: '/user/list'
-            }
-          }
+
         ]
+      },
+      {
+        path: 'user/detail/:id',
+        name: 'UserDetail',
+        component: () => import('@/views/user/Detail.vue'),
+        meta: {
+          title: '人员详情',
+          requiresAuth: true,
+          hidden: true
+        }
       },
       {
         path: 'task',

@@ -30,7 +30,7 @@ export const userApi = {
   // 用户列表（后台目前返回 List，可在前端分页）
   getUserList(data) {
     return request({
-      url: '/user/list',
+      url: '/api/user/list',
       method: 'post',
       data
     })
@@ -39,7 +39,7 @@ export const userApi = {
   // 获取指定用户详情
   getUserById(userId) {
     return request({
-      url: '/user/get',
+      url: '/api/user/get',
       method: 'get',
       params: {userId}
     })
@@ -48,7 +48,7 @@ export const userApi = {
   // 新增或更新用户
   addOrUpdateUser(data) {
     return request({
-      url: '/user/addOrUpdate',
+      url: '/api/user/addOrUpdate',
       method: 'post',
       data
     })
@@ -57,7 +57,7 @@ export const userApi = {
   // 删除用户
   deleteUser(userId) {
     return request({
-      url: '/user/delete',
+      url: '/api/user/delete',
       method: 'delete',
       params: {userId}
     })

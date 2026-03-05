@@ -149,13 +149,14 @@ const form = reactive({
 })
 
 const filteredList = computed(() => {
-  return rawList.value.filter(u => {
-    const uOk = !searchForm.username || (u.username || '').includes(searchForm.username)
-    const rOk = !searchForm.realName || (u.realName || '').includes(searchForm.realName)
-    const dOk = !searchForm.department || (u.department || '').includes(searchForm.department)
-    const sOk = searchForm.status == null || u.status === searchForm.status
-    return uOk && rOk && dOk && sOk
-  })
+  // return rawList.value.filter(u => {
+  //   const uOk = !searchForm.username || (u.username || '').includes(searchForm.username)
+  //   const rOk = !searchForm.realName || (u.realName || '').includes(searchForm.realName)
+  //   const dOk = !searchForm.department || (u.department || '').includes(searchForm.department)
+  //   const sOk = searchForm.status == null || u.status === searchForm.status
+  //   return uOk && rOk && dOk && sOk
+  // })、
+  return rawList.value
 })
 
 const pagedList = computed(() => {
@@ -178,13 +179,16 @@ const fetchList = async () => {
   loading.value = true
   try {
     const res = await userApi.getUserList({
-      pageNum: 1,
-      pageSize: 1000, // 后端目前返回 list，前端分页
-      ...searchForm
+      pageNum: pagination.page,
+      pageSize: pagination.size,
+      username: searchForm.username,
+      realName: searchForm.realName,
+      department: searchForm.department,
+      status: searchForm.status
     })
     if (res.data) {
-      rawList.value = res.data || []
-      pagination.total = rawList.value.length
+      rawList.value = res.data.list || []
+      pagination.total = res.data.total || 0
     }
   } finally {
     loading.value = false
@@ -197,7 +201,7 @@ const calcPage = () => {
 
 const handleSearch = () => {
   pagination.page = 1
-  calcPage()
+  fetchList()
 }
 
 const handleReset = () => {
