@@ -12,6 +12,7 @@
         <el-menu-item
             v-if="!route.children && !route.meta?.hidden"
             :index="route.path.startsWith('/') ? route.path : '/' + route.path"
+            @click="handleMenuClick(route.path.startsWith('/') ? route.path : '/' + route.path)"
         >
           <el-icon v-if="route.meta?.icon">
             <component :is="route.meta.icon" />
@@ -42,6 +43,7 @@
     </el-menu>
   </el-scrollbar>
 </template>
+
 
 <script setup>import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
