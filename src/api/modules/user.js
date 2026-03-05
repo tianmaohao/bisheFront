@@ -2,7 +2,30 @@
 import request from '../index'
 
 export const userApi = {
-  // 登录/登出/当前用户信息 省略...
+  // 用户登录
+  login(data) {
+    return request({
+      url: '/auth/login',
+      method: 'post',
+      data
+    })
+  },
+
+  // 用户登出
+  logout() {
+    return request({
+      url: '/auth/logout',
+      method: 'post'
+    })
+  },
+
+  // 获取当前用户信息
+  getUserInfo() {
+    return request({
+      url: '/user/info',
+      method: 'get'
+    })
+  },
 
   // 用户列表（后台目前返回 List，可在前端分页）
   getUserList(data) {
@@ -18,7 +41,7 @@ export const userApi = {
     return request({
       url: '/user/get',
       method: 'get',
-      params: { userId }
+      params: {userId}
     })
   },
 
@@ -36,7 +59,7 @@ export const userApi = {
     return request({
       url: '/user/delete',
       method: 'delete',
-      params: { userId }
+      params: {userId}
     })
   }
 }

@@ -46,17 +46,17 @@ const routes = [
               requiresAuth: true
             }
           },
-          {
-            path: 'detail/:id',
-            name: 'ProjectDetail',
-            component: () => import('@/views/project/Detail.vue'),
-            meta: {
-              title: '项目详情',
-              requiresAuth: true,
-              activeMenu: '/project/list'
-            }
-          }
         ]
+      },
+      {
+        path: 'project/detail/:id',
+        name: 'ProjectDetail',
+        component: () => import('@/views/project/Detail.vue'),
+        meta: {
+          title: '项目详情',
+          requiresAuth: true,
+          hidden: true
+        }
       },
       {
         path: 'user',
