@@ -24,12 +24,14 @@
           </el-card>
         </el-col>
         <el-col :span="6" :xs="24">
-          <el-statistic title="超时任务数" :value="statistics.overdueTasks">
-            <template #prefix>
-              <el-icon color="#f56c6c"><Warning /></el-icon>
-            </template>
-            <template #suffix>个</template>
-          </el-statistic>
+          <el-card shadow="hover" class="stat-card">
+            <el-statistic title="超时任务数" :value="statistics.overdueTasks">
+              <template #prefix>
+                <el-icon color="#f56c6c"><Warning /></el-icon>
+              </template>
+              <template #suffix>个</template>
+            </el-statistic>
+          </el-card>
         </el-col>
         <el-col :span="6" :xs="24">
           <el-card shadow="hover" class="stat-card">
@@ -66,7 +68,7 @@
           <span>任务明细</span>
         </template>
         <el-table
-            v-loading="tableLoading"
+            v-loading="pageLoading"
             :data="taskList"
             stripe
             border
@@ -101,15 +103,15 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
-import { useUserStore } from '@/stores/modules/user'
 import { formatDate } from '@/utils/date'
 import { TASK_STATUS, TASK_STATUS_MAP } from '@/config/constants'
-import request from '@/api'
+import { taskApi } from '@/api/modules/task'
 
-const userStore = useUserStore()
+// 页面加载状态
+const pageLoading = ref(true)
 
 // 统计数据
 const statistics = reactive({
@@ -126,19 +128,15 @@ let statusChart = null
 let trendChart = null
 
 // 任务列表
-const tableLoading = ref(false)
 const taskList = ref([])
+
+// 月度统计数据
+const monthlyStats = ref([])
 
 // 获取任务统计
 const fetchStatistics = async () => {
   try {
-    const userId = userStore.userInfo?.userId
-    if (!userId) return
-
-    const res = await request({
-      url: `/task/statistics/${userId}`,
-      method: 'get'
-    })
+    const res = await taskApi.getCurrentUserTaskStatistics()
 
     if (res.data) {
       statistics.totalTasks = res.data.totalTasks || 0
@@ -151,21 +149,28 @@ const fetchStatistics = async () => {
   }
 }
 
+// 获取月度统计数据
+const fetchMonthlyStats = async () => {
+  try {
+    const res = await taskApi.getCurrentUserMonthlyTaskStats()
+
+    if (res.data && res.data.length > 0) {
+      monthlyStats.value = res.data
+    } else {
+      monthlyStats.value = []
+    }
+  } catch (error) {
+    console.error('Fetch monthly stats error:', error)
+    monthlyStats.value = []
+  }
+}
+
 // 获取任务列表
 const fetchTaskList = async () => {
-  tableLoading.value = true
   try {
-    const userId = userStore.userInfo?.userId
-    if (!userId) return
-
-    const res = await request({
-      url: '/task/list',
-      method: 'get',
-      params: {
-        assigneeId: userId,
-        pageNum: 1,
-        pageSize: 100
-      }
+    const res = await taskApi.getTaskList({
+      pageNum: 1,
+      pageSize: 100
     })
 
     if (res.data) {
@@ -174,12 +179,14 @@ const fetchTaskList = async () => {
   } catch (error) {
     console.error('Fetch task list error:', error)
   } finally {
-    tableLoading.value = false
+    pageLoading.value = false
   }
 }
 
 // 初始化图表
-const initCharts = () => {
+const initCharts = async () => {
+  await nextTick()
+
   if (statusChartRef.value) {
     statusChart = echarts.init(statusChartRef.value)
     updateStatusChart()
@@ -196,7 +203,7 @@ const updateStatusChart = () => {
   const statusData = [
     { value: statistics.onTimeTasks, name: '按时完成' },
     { value: statistics.overdueTasks, name: '超时完成' },
-    { value: statistics.totalTasks - statistics.onTimeTasks - statistics.overdueTasks, name: '未完成' }
+    { value: Math.max(0, statistics.totalTasks - statistics.onTimeTasks - statistics.overdueTasks), name: '未完成' }
   ]
 
   statusChart.setOption({
@@ -214,6 +221,7 @@ const updateStatusChart = () => {
         type: 'pie',
         radius: '60%',
         data: statusData,
+        colors: ['#67C23A', '#F56C6C', '#E6E8F3'],
         emphasis: {
           itemStyle: {
             shadowBlur: 10,
@@ -229,11 +237,18 @@ const updateStatusChart = () => {
   })
 }
 
-// 更新趋势图（这里使用 mock 数据，实际应从后端获取）
+// 更新趋势图
 const updateTrendChart = () => {
-  // Mock 数据 - 实际应该从后端获取最近几个月的统计数据
-  const months = ['1 月', '2 月', '3 月', '4 月', '5 月', '6 月']
-  const rates = [85, 88, 82, 90, 87, statistics.onTimeRate]
+  let months = []
+  let rates = []
+
+  if (monthlyStats.value && monthlyStats.value.length > 0) {
+    months = monthlyStats.value.map(item => item.month)
+    rates = monthlyStats.value.map(item => item.onTimeRate || 0)
+  } else {
+    months = ['1 月', '2 月', '3 月', '4 月', '5 月', '6 月']
+    rates = [0, 0, 0, 0, 0, statistics.onTimeRate]
+  }
 
   trendChart.setOption({
     tooltip: {
@@ -260,7 +275,10 @@ const updateTrendChart = () => {
           color: '#67C23A'
         },
         areaStyle: {
-          color: 'rgba(103, 194, 58, 0.2)'
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(103, 194, 58, 0.5)' },
+            { offset: 1, color: 'rgba(103, 194, 58, 0.1)' }
+          ])
         },
         label: {
           show: true,
@@ -280,42 +298,22 @@ const isTimeout = (row) => {
   return deadline < now && row.status !== 'completed'
 }
 
-// 获取状态类型
-// const getStatusType = (status) => {
-//   const map = {
-//     pending: 'warning',
-//     in_progress: 'primary',
-//     completed: 'success',
-//     rejected: 'danger',
-//     timeout: 'danger'
-//   }
-//   return map[status] || 'info'
-// }
-
-// 获取状态文本
-// const getStatusText = (status) => {
-//   const map = {
-//     pending: '待处理',
-//     in_progress: '进行中',
-//     completed: '已完成',
-//     rejected: '已退回',
-//     timeout: '已超时'
-//   }
-//   return map[status] || status
-// }
-
 // 窗口大小变化时重新渲染图表
 const handleResize = () => {
   statusChart?.resize()
   trendChart?.resize()
 }
 
-onMounted(() => {
-  fetchStatistics()
-  fetchTaskList()
-  setTimeout(() => {
-    initCharts()
-  }, 100)
+// 页面加载时获取数据
+onMounted(async () => {
+  await Promise.all([
+    fetchStatistics(),
+    fetchMonthlyStats(),
+    fetchTaskList()
+  ])
+
+  await initCharts()
+
   window.addEventListener('resize', handleResize)
 })
 

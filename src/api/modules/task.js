@@ -34,5 +34,21 @@ export const taskApi = {
       method: 'post',
       params: { reason }
     })
+  },
+
+  // 获取当前用户任务统计
+  getCurrentUserTaskStatistics() {
+    return request({
+      url: '/api/task/statistics',
+      method: 'get'
+    })
+  },
+
+  // 获取当前用户月度任务统计
+  getCurrentUserMonthlyTaskStats() {
+    return request({
+      url: '/api/task/monthly-stats',
+      method: 'get'
+    })
   }
 }
