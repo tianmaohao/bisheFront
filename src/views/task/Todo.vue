@@ -62,8 +62,8 @@
           </el-table-column>
           <el-table-column prop="status" label="状态" width="120">
             <template #default="{ row }">
-              <el-tag :type="row.timeoutFlag === 1 ? 'danger' : 'warning'">
-                {{ taskStatusText(row.status, row.timeoutFlag) }}
+              <el-tag :type="TASK_STATUS_MAP[row.status]?.type || 'warning'">
+                {{ TASK_STATUS_MAP[row.status]?.label || row.status }}
               </el-tag>
             </template>
           </el-table-column>
@@ -108,6 +108,7 @@
   import { useUserStore } from '@/stores/modules/user'
   import { useTaskStore } from '@/stores/modules/task'
   import { formatDate } from '@/utils/date'
+  import { TASK_STATUS, TASK_STATUS_MAP } from '@/config/constants'
   
   const userStore = useUserStore()
   const taskStore = useTaskStore()
@@ -184,17 +185,17 @@
   }
 
   
-  const taskStatusText = (status, timeoutFlag) => {
-    if (timeoutFlag === 1) return '即将/已超时'
-    const map = {
-      pending: '待处理',
-      in_progress: '进行中',
-      completed: '已完成',
-      rejected: '已退回',
-      timeout: '已超时'
-    }
-    return map[status] || status || '-'
-  }
+  // const taskStatusText = (status, timeoutFlag) => {
+  //   if (timeoutFlag === 1) return '即将/已超时'
+  //   const map = {
+  //     pending: '待处理',
+  //     in_progress: '进行中',
+  //     completed: '已完成',
+  //     rejected: '已退回',
+  //     timeout: '已超时'
+  //   }
+  //   return map[status] || status || '-'
+  // }
 
   const isNearOrTimeout = (row) => {
     if (!row.deadline) return false

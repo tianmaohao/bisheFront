@@ -161,8 +161,8 @@
           </el-table-column>
           <el-table-column prop="status" label="状态" width="140">
             <template #default="{ row }">
-              <el-tag :type="row.timeoutFlag === 1 ? 'danger' : 'success'">
-                {{ taskStatusText(row.status) }}
+              <el-tag :type="TASK_STATUS_MAP[row.status]?.type || 'success'">
+                {{ TASK_STATUS_MAP[row.status]?.label || taskStatusText(row.status) }}
               </el-tag>
             </template>
           </el-table-column>
@@ -278,10 +278,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useProjectStore } from '@/stores/modules/project'
 import { useUserStore } from '@/stores/modules/user'
-import { PROJECT_STATUS, PROJECT_STATUS_MAP } from '@/config/constants'
 import { formatDateOnly, formatDate } from '@/utils/date'
 import { hasPermission } from '@/utils/permission'
 import { PERMISSIONS } from '@/config/constants'
+import { PROJECT_STATUS, PROJECT_STATUS_MAP, TASK_STATUS, TASK_STATUS_MAP } from '@/config/constants'
 
 const route = useRoute()
 const router = useRouter()
@@ -319,10 +319,12 @@ const nodeRules = {
 
 const availableParentNodes = computed(() => {
   // 排除当前正在编辑的节点
-  return nodes.value.filter(node =>
-      !editingNode.value || node.nodeId !== editingNode.value.nodeId
-  )
+  if (!editingNode.value) {
+    return nodes.value
+  }
+  return nodes.value.filter(node => node.nodeId !== editingNode.value.nodeId)
 })
+
 
 const canOperate = computed(() => {
   return hasPermission(PERMISSIONS.PROJECT_EDIT)
@@ -475,6 +477,37 @@ const fetchProjectDetail = async () => {
   }
 }
 
+// 构建树形节点结构
+const buildNodeTree = (nodes) => {
+  const nodeMap = {}
+  const tree = []
+
+  // 创建节点映射
+  nodes.forEach(node => {
+    nodeMap[node.nodeId] = { ...node, children: [] }
+  })
+
+  // 构建树形结构
+  nodes.forEach(node => {
+    const currentNode = nodeMap[node.nodeId]
+    if (node.parentId) {
+      const parent = nodeMap[node.parentId]
+      if (parent) {
+        parent.children.push(currentNode)
+      } else {
+        // 父节点不存在，作为根节点
+        tree.push(currentNode)
+      }
+    } else {
+      // 没有父节点，作为根节点
+      tree.push(currentNode)
+    }
+  })
+
+  return tree
+}
+
+
 // 状态变更
 const handleStatusChange = async (status) => {
   try {
@@ -527,21 +560,21 @@ const nodeStatusText = (status) => {
 }
 
 // 任务状态文案
-const taskStatusText = (status) => {
-  if (!status) return '-'
-  // 后端枚举 TaskStatusEnum，直接展示枚举名或做简单映射
-  const statusCode = typeof status === 'object' ? status.code : status
-  // 将大写的状态码转换为小写进行匹配
-  const statusLower = statusCode.toLowerCase()
-  const map = {
-    pending: '待处理',
-    in_progress: '进行中',
-    completed: '已完成',
-    rejected: '已退回',
-    timeout: '已超时'
-  }
-  return map[status] || status
-}
+//const taskStatusText = (status) => {
+//   if (!status) return '-'
+//   // 后端枚举 TaskStatusEnum，直接展示枚举名或做简单映射
+//   const statusCode = typeof status === 'object' ? status.code : status
+//   // 将大写的状态码转换为小写进行匹配
+//   const statusLower = statusCode.toLowerCase()
+//   const map = {
+//     pending: '待处理',
+//     in_progress: '进行中',
+//     completed: '已完成',
+//     rejected: '已退回',
+//     timeout: '已超时'
+//   }
+//   return map[status] || status
+// }
 
 // 操作类型文案
 const operationTypeText = (type) => {

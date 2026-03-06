@@ -9,11 +9,11 @@ export const PROJECT_STATUS = {
 
 // 项目状态标签映射
 export const PROJECT_STATUS_MAP = {
-  [PROJECT_STATUS.REQUIREMENT_INITIATED]: { label: '需求发起', type: 'info' },
-  [PROJECT_STATUS.DEVELOPMENT]: { label: '开发实施', type: 'warning' },
-  [PROJECT_STATUS.DEPLOYMENT]: { label: '部署推进', type: 'primary' },
-  [PROJECT_STATUS.DELIVERED]: { label: '交付完成', type: 'success' },
-  [PROJECT_STATUS.RETURNED]: { label: '已退回', type: 'danger' }
+  REQUIREMENT_INITIATED: { label: '需求发起', type: 'info' },
+  DEVELOPMENT: { label: '开发实施', type: 'warning' },
+  DEPLOYMENT: { label: '部署推进', type: 'primary' },
+  DELIVERED: { label: '交付完成', type: 'success' },
+  RETURNED: { label: '已退回', type: 'danger' }
 }
 
 // 推送状态枚举
@@ -22,6 +22,32 @@ export const PUSH_STATUS = {
   SUCCESS: 'SUCCESS', // 推送成功
   FAILED: 'FAILED', // 推送失败
   CANCELLED: 'CANCELLED' // 已取消
+}
+
+// 推送状态标签映射
+export const PUSH_STATUS_MAP = {
+  PENDING: { label: '待推送', type: 'warning' },
+  SUCCESS: { label: '推送成功', type: 'success' },
+  FAILED: { label: '推送失败', type: 'danger' },
+  CANCELLED: { label: '已取消', type: 'info' }
+}
+
+// 任务状态枚举（与后端 TaskStatusEnum 保持一致）
+export const TASK_STATUS = {
+  PENDING: 'pending', // 待处理
+  IN_PROGRESS: 'pending-in_progress', // 进行中
+  COMPLETED: 'completed', // 已完成
+  REJECTED: 'pending-rejected', // 已退回
+  TIMEOUT: 'pending-timeout' // 已超时
+}
+
+// 任务状态标签映射
+export const TASK_STATUS_MAP = {
+  pending: { label: '待处理', type: 'warning' },
+  'pending-in_progress': { label: '进行中', type: 'primary' },
+  completed: { label: '已完成', type: 'success' },
+  'pending-rejected': { label: '已退回', type: 'danger' },
+  'pending-timeout': { label: '已超时', type: 'danger' }
 }
 
 // 推送协议类型
@@ -45,12 +71,12 @@ export const PERMISSIONS = {
   PROJECT_EDIT: 'project:edit',
   PROJECT_DELETE: 'project:delete',
   PROJECT_VIEW: 'project:view',
-  
+
   // 推送相关
   PUSH_CONFIG: 'push:config',
   PUSH_MANUAL: 'push:manual',
   PUSH_VIEW: 'push:view',
-  
+
   // 数据查看
   DATA_VIEW: 'data:view',
   DATA_EXPORT: 'data:export'
@@ -73,4 +99,3 @@ export const HTTP_STATUS = {
   NOT_FOUND: 404,
   SERVER_ERROR: 500
 }
-

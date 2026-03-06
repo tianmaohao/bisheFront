@@ -77,8 +77,8 @@
           <el-table-column prop="taskTitle" label="任务标题" min-width="180" />
           <el-table-column prop="status" label="状态" width="100">
             <template #default="{ row }">
-              <el-tag :type="getStatusType(row.status)">
-                {{ getStatusText(row.status) }}
+              <el-tag :type="TASK_STATUS_MAP[row.status]?.type || 'info'">
+                {{ TASK_STATUS_MAP[row.status]?.label || row.status }}
               </el-tag>
             </template>
           </el-table-column>
@@ -106,6 +106,7 @@ import { Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { useUserStore } from '@/stores/modules/user'
 import { formatDate } from '@/utils/date'
+import { TASK_STATUS, TASK_STATUS_MAP } from '@/config/constants'
 import request from '@/api'
 
 const userStore = useUserStore()
@@ -280,28 +281,28 @@ const isTimeout = (row) => {
 }
 
 // 获取状态类型
-const getStatusType = (status) => {
-  const map = {
-    pending: 'warning',
-    in_progress: 'primary',
-    completed: 'success',
-    rejected: 'danger',
-    timeout: 'danger'
-  }
-  return map[status] || 'info'
-}
+// const getStatusType = (status) => {
+//   const map = {
+//     pending: 'warning',
+//     in_progress: 'primary',
+//     completed: 'success',
+//     rejected: 'danger',
+//     timeout: 'danger'
+//   }
+//   return map[status] || 'info'
+// }
 
 // 获取状态文本
-const getStatusText = (status) => {
-  const map = {
-    pending: '待处理',
-    in_progress: '进行中',
-    completed: '已完成',
-    rejected: '已退回',
-    timeout: '已超时'
-  }
-  return map[status] || status
-}
+// const getStatusText = (status) => {
+//   const map = {
+//     pending: '待处理',
+//     in_progress: '进行中',
+//     completed: '已完成',
+//     rejected: '已退回',
+//     timeout: '已超时'
+//   }
+//   return map[status] || status
+// }
 
 // 窗口大小变化时重新渲染图表
 const handleResize = () => {
