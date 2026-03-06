@@ -79,7 +79,7 @@
         <el-table-column prop="message" label="推送消息" min-width="200" show-overflow-tooltip />
         <el-table-column prop="errorMessage" label="错误信息" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
-            <span v-if="row.errorMessage" style="color: @danger-color;">
+            <span v-if="row.errorMessage" style="color： @danger-color;">
               {{ row.errorMessage }}
             </span>
             <span v-else>-</span>

@@ -530,6 +530,9 @@ const nodeStatusText = (status) => {
 const taskStatusText = (status) => {
   if (!status) return '-'
   // 后端枚举 TaskStatusEnum，直接展示枚举名或做简单映射
+  const statusCode = typeof status === 'object' ? status.code : status
+  // 将大写的状态码转换为小写进行匹配
+  const statusLower = statusCode.toLowerCase()
   const map = {
     pending: '待处理',
     in_progress: '进行中',
