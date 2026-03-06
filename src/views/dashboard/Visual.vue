@@ -19,6 +19,7 @@
             placeholder="请选择客户"
             clearable
             @change="handleFilterChange"
+            style="width: 150px"
           >
             <el-option
               v-for="customer in customerList"
@@ -34,6 +35,7 @@
             placeholder="请选择状态"
             clearable
             @change="handleFilterChange"
+            style="width: 150px"
           >
             <el-option
               v-for="(label, value) in PROJECT_STATUS_MAP"

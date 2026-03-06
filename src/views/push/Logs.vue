@@ -26,6 +26,7 @@
               v-model="searchForm.status"
               placeholder="请选择状态"
               clearable
+              style="width: 150px"
             >
               <el-option label="成功" value="SUCCESS" />
               <el-option label="失败" value="FAILED" />

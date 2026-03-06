@@ -13,7 +13,7 @@
             @change="loadData"
           />
         </el-form-item>
-        <el-form-item label="维度">
+        <el-form-item label="维度" style="width: 150px">
           <el-select v-model="filterForm.dimension" @change="loadData">
             <el-option label="按人员" value="user" />
             <el-option label="按部门" value="dept" />
