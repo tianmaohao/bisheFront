@@ -21,7 +21,7 @@
             <el-input v-model="searchForm.realName" placeholder="姓名" clearable />
           </el-form-item>
           <el-form-item label="部门">
-            <el-input v-model="searchForm.department" placeholder="部门" clearable />
+            <el-input v-model="searchForm.department" placeholder="部门" clearable style="width: 150px" />
           </el-form-item>
           <el-form-item label="状态">
             <el-select v-model="searchForm.status" placeholder="状态" clearable style="width: 100px">

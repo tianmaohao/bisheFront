@@ -22,7 +22,7 @@ export const userApi = {
   // 获取当前用户信息
   getUserInfo() {
     return request({
-      url: '/user/info',
+      url: '/api/user/info',
       method: 'get'
     })
   },

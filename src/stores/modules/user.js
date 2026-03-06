@@ -9,7 +9,7 @@ export const useUserStore = defineStore('user', {
     permissions: getPermissions(),
     roles: getRoles()
   }),
-  
+
   getters: {
     isAuthenticated: (state) => !!state.token,
     hasPermission: (state) => (permission) => {
@@ -19,7 +19,7 @@ export const useUserStore = defineStore('user', {
       return state.roles.includes(role)
     }
   },
-  
+
   actions: {
     // 登录
     async login(credentials) {
@@ -30,7 +30,7 @@ export const useUserStore = defineStore('user', {
           this.userInfo = res.data.userInfo
           this.permissions = res.data.permissions || []
           this.roles = res.data.roles || []
-          
+
           setToken(this.token)
           setUserInfo(this.userInfo)
           setPermissions(this.permissions)
@@ -41,7 +41,7 @@ export const useUserStore = defineStore('user', {
         throw error
       }
     },
-    
+
     // 登出
     async logout() {
       try {
@@ -56,21 +56,35 @@ export const useUserStore = defineStore('user', {
         clearAuth()
       }
     },
-    
-    // 获取用户信息
+
+    // 获取用户信息（每次调用都会发起网络请求）
     async fetchUserInfo() {
       try {
         const res = await userApi.getUserInfo()
+        console.log('获取用户信息响应:', res)
+
         if (res.data) {
           this.userInfo = res.data
           this.permissions = res.data.permissions || []
           this.roles = res.data.roles || []
+
+          // 更新 localStorage
           setUserInfo(this.userInfo)
           setPermissions(this.permissions)
           setRoles(this.roles)
+
+          console.log('用户信息已更新:', this.userInfo)
+          return res
+        } else {
+          throw new Error('获取用户信息失败：返回数据为空')
         }
-        return res
       } catch (error) {
+        console.error('fetchUserInfo 错误:', error)
+        // 如果是 401 错误，清除认证信息
+        if (error.response && error.response.status === 401) {
+          console.log('Token 已失效，清除认证信息')
+          this.logout()
+        }
         throw error
       }
     },
@@ -100,4 +114,3 @@ export const useUserStore = defineStore('user', {
     }
   }
 })
-
