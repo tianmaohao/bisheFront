@@ -391,7 +391,6 @@ const fetchUserList = async () => {
   }
 }
 
-
 // 提交节点表单
 const submitNodeForm = async () => {
   if (!nodeFormRef.value) return
@@ -400,9 +399,24 @@ const submitNodeForm = async () => {
     if (valid) {
       nodeLoading.value = true
       try {
+        // 格式化日期时间为 yyyy-MM-dd HH:mm:ss 格式，避免时区问题
+        const formatDateTime = (date) => {
+          if (!date) return ''
+          const d = new Date(date)
+          const year = d.getFullYear()
+          const month = String(d.getMonth() + 1).padStart(2, '0')
+          const day = String(d.getDate()).padStart(2, '0')
+          const hours = String(d.getHours()).padStart(2, '0')
+          const minutes = String(d.getMinutes()).padStart(2, '0')
+          const seconds = String(d.getSeconds()).padStart(2, '0')
+          return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+        }
+
         const nodeData = {
           ...nodeForm.value,
-          projectId: project.value.id
+          projectId: project.value.id,
+          startTime: nodeForm.value.startTime ? formatDateTime(nodeForm.value.startTime) : '',
+          endTime: nodeForm.value.endTime ? formatDateTime(nodeForm.value.endTime) : ''
         }
 
         if (editingNode.value) {
@@ -501,11 +515,11 @@ const nodeStatusText = (status) => {
   switch (status) {
     case 'pending':
       return '待开始'
-    case 'in_progress':
+    case 'pending-in_progress':
       return '进行中'
     case 'completed':
       return '已完成'
-    case 'expired':
+    case 'pending-expired':
       return '已超期'
     default:
       return status || '-'

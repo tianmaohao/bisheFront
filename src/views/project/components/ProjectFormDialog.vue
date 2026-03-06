@@ -52,8 +52,7 @@
   </el-dialog>
 </template>
 
-<script setup>
-import { ref, reactive, computed, watch } from 'vue'
+<script setup>import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useProjectStore } from '@/stores/modules/project'
 import { validators } from '@/utils/validator'
@@ -95,10 +94,20 @@ const rules = {
   deadline: [validators.required('请选择交付日期')]
 }
 
+// 格式化日期为 yyyy-MM-dd 格式
+const formatDate = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // 获取项目详情
 const fetchProjectDetail = async () => {
   if (!props.projectId) return
-  
+
   try {
     await projectStore.fetchProjectDetail(props.projectId)
     const project = projectStore.currentProject
@@ -116,7 +125,7 @@ const fetchProjectDetail = async () => {
   }
 }
 
-// 监听projectId变化
+// 监听 projectId 变化
 watch(() => props.projectId, (newVal) => {
   if (newVal && dialogVisible.value) {
     fetchProjectDetail()
@@ -154,16 +163,21 @@ const handleClose = () => {
 
 const handleSubmit = async () => {
   if (!formRef.value) return
-  
+
   await formRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       try {
+        const submitData = {
+          ...form,
+          startDate: formatDate(form.startDate),
+          deadline: formatDate(form.deadline)
+        }
         if (props.projectId) {
-          await projectStore.updateProject(props.projectId, form)
+          await projectStore.updateProject(props.projectId, submitData)
           ElMessage.success('更新成功')
         } else {
-          await projectStore.createProject(form)
+          await projectStore.createProject(submitData)
           ElMessage.success('创建成功')
         }
         emit('success')

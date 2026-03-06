@@ -22,6 +22,7 @@
                 v-model="searchForm.finishType"
                 placeholder="请选择"
                 clearable
+                style="width: 150px"
               >
                 <el-option label="正常完成" value="normal" />
                 <el-option label="超时完成" value="timeout" />

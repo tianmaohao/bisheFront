@@ -26,6 +26,7 @@
               v-model="searchForm.status"
               placeholder="请选择状态"
               clearable
+              style="width: 150px"
             >
               <el-option
                 v-for="(label, value) in PROJECT_STATUS_MAP"
