@@ -50,5 +50,15 @@ export const taskApi = {
       url: '/api/task/monthly-stats',
       method: 'get'
     })
+  },
+
+  // 获取任务统计明细（按维度）
+  getTaskStatisticsByDimension(data) {
+    return request({
+      url: '/api/task/statistics/dimension',
+      method: 'post',
+      data
+    })
   }
+
 }
