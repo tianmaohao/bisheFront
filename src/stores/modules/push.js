@@ -27,31 +27,40 @@ export const usePushStore = defineStore('push', {
   },
   
   actions: {
-    // 获取推送配置
-    async fetchPushConfig() {
-      try {
-        const res = await pushApi.getPushConfig()
-        if (res.data) {
-          this.pushConfig = res.data
-        }
-        return res
-      } catch (error) {
-        throw error
-      }
-    },
-    
-    // 更新推送配置
-    async updatePushConfig(data) {
-      try {
-        const res = await pushApi.updatePushConfig(data)
-        if (res.data) {
-          this.pushConfig = { ...this.pushConfig, ...res.data }
-        }
-        return res
-      } catch (error) {
-        throw error
-      }
-    },
+      // 获取推送配置
+      async fetchPushConfig() {
+          try {
+              const res = await pushApi.getPushConfig()
+              if (res.data) {
+                  // 将后端的 0/1 转换为布尔值供前端使用
+                  this.pushConfig = {
+                      ...res.data,
+                      autoPush: res.data.autoPush === 1
+                  }
+              }
+              return res
+          } catch (error) {
+              throw error
+          }
+      },
+
+      // 更新推送配置
+      async updatePushConfig(data) {
+          try {
+              // 确保 autoPush 是 0 或 1
+              const submitData = {
+                  ...data,
+                  autoPush: data.autoPush === true || data.autoPush === 1 ? 1 : 0
+              }
+              const res = await pushApi.updatePushConfig(submitData)
+              if (res.data) {
+                  this.pushConfig = { ...this.pushConfig, ...res.data }
+              }
+              return res
+          } catch (error) {
+              throw error
+          }
+      },
     
     // 手动触发推送
     async manualPush(projectId) {

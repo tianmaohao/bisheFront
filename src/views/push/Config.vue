@@ -174,12 +174,17 @@ const fetchConfig = async () => {
 // 保存配置
 const handleSave = async () => {
   if (!formRef.value) return
-  
+
   await formRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       try {
-        await pushStore.updatePushConfig(form)
+        // 将 autoPush 布尔值转换为 0/1
+        const submitData = {
+          ...form,
+          autoPush: form.autoPush ? 1 : 0
+        }
+        await pushStore.updatePushConfig(submitData)
         ElMessage.success('配置保存成功')
       } catch (error) {
         console.error('Save config error:', error)
