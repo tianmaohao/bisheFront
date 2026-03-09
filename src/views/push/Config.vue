@@ -5,45 +5,66 @@
         <div class="card-header">
           <span>推送配置</span>
           <el-button
-            type="primary"
-            :disabled="!canConfig"
-            @click="handleSave"
-            :loading="loading"
+              type="primary"
+              :disabled="!canConfig"
+              @click="handleSave"
+              :loading="loading"
           >
             保存配置
           </el-button>
         </div>
       </template>
-      
+
       <el-alert
-        v-if="!canConfig"
-        title="权限提示"
-        description="您没有配置推送参数的权限，请联系管理员"
-        type="warning"
-        :closable="false"
-        show-icon
-        style="margin-bottom: 20px"
+          v-if="!canConfig"
+          title="权限提示"
+          description="您没有配置推送参数的权限，请联系管理员"
+          type="warning"
+          :closable="false"
+          show-icon
+          style="margin-bottom: 20px"
       />
-      
+
+      <!-- 选择项目 -->
       <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="150px"
+          ref="formRef"
+          :model="form"
+          :rules="rules"
+          label-width="150px"
       >
-        <el-form-item label="推送协议" prop="protocol">
-          <el-radio-group v-model="form.protocol">
+        <el-form-item label="选择项目" prop="projectId">
+          <el-select
+              v-model="form.projectId"
+              placeholder="请选择项目"
+              filterable
+              style="width: 100%"
+              @change="handleProjectChange"
+          >
+            <el-option
+                v-for="project in projectList"
+                :key="project.id"
+                :label="project.name"
+                :value="project.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-divider />
+        <el-form-item label="推送方式" prop="pushType">
+          <el-radio-group v-model="form.pushType">
             <el-radio label="MQTT">MQTT</el-radio>
             <el-radio label="RABBITMQ">RabbitMQ</el-radio>
+            <el-radio label="HTTP">HTTP 推送</el-radio>
           </el-radio-group>
         </el-form-item>
-        
-        <el-divider v-if="form.protocol === 'MQTT'" />
-        <template v-if="form.protocol === 'MQTT'">
-          <el-form-item label="MQTT服务器地址" prop="mqttHost">
-            <el-input v-model="form.mqttHost" placeholder="例如: mqtt.example.com" />
+
+        <!-- MQTT 配置 -->
+        <template v-if="form.pushType === 'MQTT'">
+          <el-divider />
+          <el-form-item label="MQTT 服务器地址" prop="mqttHost">
+            <el-input v-model="form.mqttHost" placeholder="例如：mqtt.example.com" />
           </el-form-item>
-          <el-form-item label="MQTT端口" prop="mqttPort">
+          <el-form-item label="MQTT 端口" prop="mqttPort">
             <el-input-number v-model="form.mqttPort" :min="1" :max="65535" />
           </el-form-item>
           <el-form-item label="用户名" prop="mqttUsername">
@@ -52,21 +73,22 @@
           <el-form-item label="密码" prop="mqttPassword">
             <el-input v-model="form.mqttPassword" type="password" show-password />
           </el-form-item>
-          <el-form-item label="主题(Topic)" prop="mqttTopic">
-            <el-input v-model="form.mqttTopic" placeholder="例如: project/data" />
+          <el-form-item label="主题 (Topic)" prop="mqttTopic">
+            <el-input v-model="form.mqttTopic" placeholder="例如：project/data" />
           </el-form-item>
         </template>
-        
-        <el-divider v-if="form.protocol === 'RABBITMQ'" />
-        <template v-if="form.protocol === 'RABBITMQ'">
-          <el-form-item label="RabbitMQ服务器地址" prop="rabbitmqHost">
-            <el-input v-model="form.rabbitmqHost" placeholder="例如: rabbitmq.example.com" />
+
+        <!-- RabbitMQ 配置 -->
+        <template v-if="form.pushType === 'RABBITMQ'">
+          <el-divider />
+          <el-form-item label="RabbitMQ 服务器地址" prop="rabbitmqHost">
+            <el-input v-model="form.rabbitmqHost" placeholder="例如：rabbitmq.example.com" />
           </el-form-item>
-          <el-form-item label="RabbitMQ端口" prop="rabbitmqPort">
+          <el-form-item label="RabbitMQ 端口" prop="rabbitmqPort">
             <el-input-number v-model="form.rabbitmqPort" :min="1" :max="65535" />
           </el-form-item>
           <el-form-item label="虚拟主机" prop="rabbitmqVhost">
-            <el-input v-model="form.rabbitmqVhost" placeholder="例如: /" />
+            <el-input v-model="form.rabbitmqVhost" placeholder="例如：/" />
           </el-form-item>
           <el-form-item label="用户名" prop="rabbitmqUsername">
             <el-input v-model="form.rabbitmqUsername" />
@@ -81,22 +103,108 @@
             <el-input v-model="form.rabbitmqRoutingKey" />
           </el-form-item>
         </template>
-        
+
+        <!-- HTTP 配置 -->
+        <template v-if="form.pushType === 'HTTP'">
+          <el-divider />
+          <el-form-item label="推送地址" prop="httpUrl">
+            <el-input
+                v-model="form.httpUrl"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入完整的 HTTP 推送地址，例如：https://api.example.com/push"
+            />
+          </el-form-item>
+        </template>
+
         <el-divider />
-        <el-form-item label="自动推送" prop="autoPush">
+        <el-form-item label="推送模式" prop="isManualPush">
+          <el-radio-group v-model="form.isManualPush">
+            <el-radio :label="0">自动推送</el-radio>
+            <el-radio :label="1">手动推送</el-radio>
+          </el-radio-group>
+          <div class="form-tip">
+            自动推送：按照设定的时间间隔自动推送数据<br>
+            手动推送：需要手动点击按钮触发推送
+          </div>
+        </el-form-item>
+
+        <el-form-item
+            v-if="form.isManualPush === 0"
+            label="推送间隔"
+            prop="pushInterval"
+        >
+          <el-input-number
+              v-model="form.pushInterval"
+              :min="1"
+              :max="86400"
+              placeholder="请输入推送间隔（秒）"
+          />
+          <span style="margin-left: 10px; color: #909399;">秒</span>
+          <div class="form-tip">
+            自动推送的时间间隔，最小 1 秒，最大 86400 秒（24 小时）
+          </div>
+        </el-form-item>
+
+        <el-form-item
+            v-if="form.isManualPush === 0"
+            label="自动推送开关"
+            prop="autoPush"
+        >
           <el-switch
-            v-model="form.autoPush"
-            active-text="开启"
-            inactive-text="关闭"
+              v-model="form.autoPush"
+              active-text="开启"
+              inactive-text="关闭"
           />
           <div class="form-tip">
             开启后，项目状态变更到"部署推进"或"交付完成"时将自动推送数据
           </div>
         </el-form-item>
-        
+
         <el-form-item label="目标对接单位" prop="targetUnit">
           <el-input v-model="form.targetUnit" placeholder="请输入目标对接单位" />
         </el-form-item>
+
+        <!-- 手动推送按钮 -->
+        <el-form-item v-if="form.isManualPush === 1 && form.id" label="手动推送">
+          <el-button
+              type="primary"
+              @click="handleManualPush"
+              :loading="pushing"
+          >
+            立即推送
+          </el-button>
+          <div class="form-tip">
+            点击按钮将立即推送一次数据
+          </div>
+        </el-form-item>
+
+        <!-- 自动推送控制按钮 -->
+        <template v-if="form.isManualPush === 0 && form.id">
+          <el-form-item label="自动推送控制">
+            <el-space>
+              <el-button
+                  type="success"
+                  @click="handleStartAutoPush"
+                  :loading="starting"
+                  :disabled="form.autoPush"
+              >
+                开始推送
+              </el-button>
+              <el-button
+                  type="warning"
+                  @click="handleStopAutoPush"
+                  :loading="stopping"
+                  :disabled="!form.autoPush"
+              >
+                停止推送
+              </el-button>
+            </el-space>
+            <div class="form-tip">
+              控制自动推送任务的启动和停止
+            </div>
+          </el-form-item>
+        </template>
       </el-form>
     </el-card>
   </div>
@@ -106,24 +214,32 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { usePushStore } from '@/stores/modules/push'
+import { useProjectStore } from '@/stores/modules/project'
 import { canConfigPush } from '@/utils/permission'
 import { validators } from '@/utils/validator'
 
 const pushStore = usePushStore()
+const projectStore = useProjectStore()
 const formRef = ref(null)
 const loading = ref(false)
+const pushing = ref(false)
+const starting = ref(false)
+const stopping = ref(false)
 
 const canConfig = computed(() => canConfigPush())
 
 const form = reactive({
-  protocol: 'MQTT',
-  // MQTT配置
+  id: null,
+  projectId: null,
+  projectName: '',
+  pushType: 'MQTT',
+  // MQTT 配置
   mqttHost: '',
   mqttPort: 1883,
   mqttUsername: '',
   mqttPassword: '',
   mqttTopic: '',
-  // RabbitMQ配置
+  // RabbitMQ 配置
   rabbitmqHost: '',
   rabbitmqPort: 5672,
   rabbitmqVhost: '/',
@@ -131,40 +247,73 @@ const form = reactive({
   rabbitmqPassword: '',
   rabbitmqExchange: '',
   rabbitmqRoutingKey: '',
+  // HTTP 配置
+  httpUrl: '',
   // 通用配置
   autoPush: true,
+  pushInterval: 3600,
+  isManualPush: 0,
   targetUnit: ''
 })
 
 const rules = {
-  protocol: [validators.required('请选择推送协议')],
+  projectId: [validators.required('请选择项目')],
+  pushType: [validators.required('请选择推送方式')],
   mqttHost: [
-    { required: true, message: '请输入MQTT服务器地址', trigger: 'blur', validator: (rule, value, callback) => {
-      if (form.protocol === 'MQTT' && !value) {
-        callback(new Error('请输入MQTT服务器地址'))
-      } else {
-        callback()
-      }
-    }}
+    { required: true, message: '请输入 MQTT 服务器地址', trigger: 'blur', validator: (rule, value, callback) => {
+        if (form.pushType === 'MQTT' && !value) {
+          callback(new Error('请输入 MQTT 服务器地址'))
+        } else {
+          callback()
+        }
+      }}
   ],
   rabbitmqHost: [
-    { required: true, message: '请输入RabbitMQ服务器地址', trigger: 'blur', validator: (rule, value, callback) => {
-      if (form.protocol === 'RABBITMQ' && !value) {
-        callback(new Error('请输入RabbitMQ服务器地址'))
-      } else {
-        callback()
-      }
-    }}
+    { required: true, message: '请输入 RabbitMQ 服务器地址', trigger: 'blur', validator: (rule, value, callback) => {
+        if (form.pushType === 'RABBITMQ' && !value) {
+          callback(new Error('请输入 RabbitMQ 服务器地址'))
+        } else {
+          callback()
+        }
+      }}
+  ],
+  httpUrl: [
+    { required: true, message: '请输入 HTTP 推送地址', trigger: 'blur', validator: (rule, value, callback) => {
+        if (form.pushType === 'HTTP' && !value) {
+          callback(new Error('请输入 HTTP 推送地址'))
+        } else {
+          callback()
+        }
+      }}
   ],
   targetUnit: [validators.required('请输入目标对接单位')]
 }
 
-// 获取推送配置
-const fetchConfig = async () => {
+// 获取项目列表
+const projectList = ref([])
+const fetchProjectList = async () => {
   try {
-    await pushStore.fetchPushConfig()
-    if (pushStore.pushConfig) {
-      Object.assign(form, pushStore.pushConfig)
+    const res = await projectStore.fetchProjectList({
+      pageNum: 1,
+      pageSize: 100
+    })
+    projectList.value = res.data?.list || []
+  } catch (error) {
+    console.error('Fetch project list error:', error)
+  }
+}
+
+// 切换项目时加载配置
+const handleProjectChange = async (projectId) => {
+  if (!projectId) {
+    return
+  }
+
+  try {
+    await pushStore.fetchPushConfigByProjectId(projectId)
+    const config = pushStore.pushConfig
+    if (config) {
+      Object.assign(form, config)
     }
   } catch (error) {
     console.error('Fetch push config error:', error)
@@ -179,13 +328,15 @@ const handleSave = async () => {
     if (valid) {
       loading.value = true
       try {
-        // 将 autoPush 布尔值转换为 0/1
         const submitData = {
           ...form,
           autoPush: form.autoPush ? 1 : 0
         }
-        await pushStore.updatePushConfig(submitData)
+        await pushStore.savePushConfig(submitData)
         ElMessage.success('配置保存成功')
+
+        // 重新加载配置
+        handleProjectChange(form.projectId)
       } catch (error) {
         console.error('Save config error:', error)
       } finally {
@@ -195,8 +346,55 @@ const handleSave = async () => {
   })
 }
 
+// 手动推送
+const handleManualPush = async () => {
+  try {
+    await ElMessageBox.confirm('确定要立即推送数据吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+
+    pushing.value = true
+    await pushStore.manualPush(form.id)
+    ElMessage.success('推送成功')
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('Manual push error:', error)
+    }
+  } finally {
+    pushing.value = false
+  }
+}
+
+// 启动自动推送
+const handleStartAutoPush = async () => {
+  try {
+    await pushStore.startAutoPush(form.id)
+    ElMessage.success('自动推送已启动')
+    handleProjectChange(form.projectId)
+  } catch (error) {
+    console.error('Start auto push error:', error)
+  } finally {
+    starting.value = false
+  }
+}
+
+// 停止自动推送
+const handleStopAutoPush = async () => {
+  try {
+    await pushStore.stopAutoPush(form.id)
+    ElMessage.success('自动推送已停止')
+    handleProjectChange(form.projectId)
+  } catch (error) {
+    console.error('Stop auto push error:', error)
+  } finally {
+    stopping.value = false
+  }
+}
+
 onMounted(() => {
-  fetchConfig()
+  fetchProjectList()
 })
 </script>
 
@@ -207,12 +405,12 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
   }
-  
+
   .form-tip {
     margin-left: 10px;
-    color: @text-color-secondary;
+    color: #909399;
     font-size: 12px;
+    line-height: 1.5;
   }
 }
 </style>
-

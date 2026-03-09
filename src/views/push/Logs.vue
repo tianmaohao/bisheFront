@@ -10,36 +10,54 @@
           </el-button>
         </div>
       </template>
-      
+
       <!-- 搜索栏 -->
       <div class="search-bar">
         <el-form :inline="true" :model="searchForm">
+          <el-form-item label="选择项目">
+            <el-select
+                v-model="searchForm.projectId"
+                placeholder="请选择项目"
+                filterable
+                clearable
+                style="width: 200px"
+            >
+              <el-option
+                  v-for="project in projectList"
+                  :key="project.id"
+                  :label="project.name"
+                  :value="project.id"
+              />
+            </el-select>
+          </el-form-item>
           <el-form-item label="项目名称">
             <el-input
-              v-model="searchForm.projectName"
-              placeholder="请输入项目名称"
-              clearable
+                v-model="searchForm.projectName"
+                placeholder="请输入项目名称"
+                clearable
+                style="width: 200px"
             />
           </el-form-item>
           <el-form-item label="推送状态">
             <el-select
-              v-model="searchForm.status"
-              placeholder="请选择状态"
-              clearable
-              style="width: 150px"
+                v-model="searchForm.status"
+                placeholder="请选择状态"
+                clearable
+                style="width: 150px"
             >
               <el-option label="成功" value="SUCCESS" />
               <el-option label="失败" value="FAILED" />
               <el-option label="待推送" value="PENDING" />
+              <el-option label="已撤销" value="CANCELLED" />
             </el-select>
           </el-form-item>
           <el-form-item label="推送时间">
             <el-date-picker
-              v-model="searchForm.dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
+                v-model="searchForm.dateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
             />
           </el-form-item>
           <el-form-item>
@@ -48,16 +66,21 @@
           </el-form-item>
         </el-form>
       </div>
-      
+
       <!-- 日志表格 -->
       <el-table
-        v-loading="loading"
-        :data="logList"
-        stripe
-        border
-        style="width: 100%"
+          v-loading="loading"
+          :data="logList"
+          stripe
+          border
+          style="width: 100%"
       >
         <el-table-column prop="projectName" label="项目名称" min-width="150" />
+        <el-table-column prop="pushType" label="推送方式" width="120">
+          <template #default="{ row }">
+            <el-tag>{{ row.pushType }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="protocol" label="推送协议" width="120">
           <template #default="{ row }">
             <el-tag>{{ row.protocol }}</el-tag>
@@ -79,7 +102,7 @@
         <el-table-column prop="message" label="推送消息" min-width="200" show-overflow-tooltip />
         <el-table-column prop="errorMessage" label="错误信息" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
-            <span v-if="row.errorMessage" style="color： @danger-color;">
+            <span v-if="row.errorMessage" style="color: #f56c6c;">
               {{ row.errorMessage }}
             </span>
             <span v-else>-</span>
@@ -88,27 +111,27 @@
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="{ row }">
             <el-button
-              v-if="row.status === 'SUCCESS'"
-              link
-              type="danger"
-              @click="handleCancel(row.id)"
+                v-if="row.status === 'SUCCESS'"
+                link
+                type="danger"
+                @click="handleCancel(row.id)"
             >
               撤销
             </el-button>
           </template>
         </el-table-column>
       </el-table>
-      
+
       <!-- 分页 -->
       <div class="pagination">
         <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.size"
-          :total="pagination.total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handlePageChange"
+            v-model:current-page="pagination.page"
+            v-model:page-size="pagination.size"
+            :total="pagination.total"
+            :page-sizes="[10, 20, 50, 100]"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange"
+            @current-change="handlePageChange"
         />
       </div>
     </el-card>
@@ -120,15 +143,19 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { usePushStore } from '@/stores/modules/push'
+import { useProjectStore } from '@/stores/modules/project'
 import { PUSH_STATUS } from '@/config/constants'
 import { formatDate } from '@/utils/date'
 
 const pushStore = usePushStore()
+const projectStore = useProjectStore()
 
 const loading = ref(false)
 const logList = ref([])
+const projectList = ref([])
 
 const searchForm = reactive({
+  projectId: null,
   projectName: '',
   status: '',
   dateRange: []
@@ -139,6 +166,19 @@ const pagination = reactive({
   size: 10,
   total: 0
 })
+
+// 获取项目列表
+const fetchProjectList = async () => {
+  try {
+    const res = await projectStore.fetchProjectList({
+      pageNum: 1,
+      pageSize: 100
+    })
+    projectList.value = res.data?.list || []
+  } catch (error) {
+    console.error('Fetch project list error:', error)
+  }
+}
 
 // 获取推送日志
 const fetchLogList = async () => {
@@ -152,7 +192,7 @@ const fetchLogList = async () => {
       size: pagination.size
     }
     delete params.dateRange
-    
+
     const res = await pushStore.fetchPushLogList(params)
     if (res.data) {
       logList.value = res.data.list || []
@@ -191,6 +231,7 @@ const handleSearch = () => {
 }
 
 const handleReset = () => {
+  searchForm.projectId = null
   searchForm.projectName = ''
   searchForm.status = ''
   searchForm.dateRange = []
@@ -227,6 +268,7 @@ const handlePageChange = () => {
 }
 
 onMounted(() => {
+  fetchProjectList()
   fetchLogList()
 })
 </script>
@@ -238,11 +280,11 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
   }
-  
+
   .search-bar {
     margin-bottom: 20px;
   }
-  
+
   .pagination {
     margin-top: 20px;
     display: flex;
@@ -250,4 +292,3 @@ onMounted(() => {
   }
 }
 </style>
-

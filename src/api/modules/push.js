@@ -1,56 +1,74 @@
 import request from '../index'
 
-// 数据推送相关 API
 export const pushApi = {
-  // 获取推送配置
-  getPushConfig() {
+  // 获取所有推送配置列表
+  getConfigList() {
     return request({
-      url: '/api/push/config',
+      url: '/api/push/config/list',
       method: 'get'
     })
   },
 
-  // 更新推送配置
-  updatePushConfig(data) {
+  // 根据项目 ID 获取推送配置
+  getConfigByProjectId(projectId) {
     return request({
       url: '/api/push/config',
-      method: 'put',
+      method: 'get',
+      params: { projectId }
+    })
+  },
+
+  // 保存推送配置
+  saveConfig(data) {
+    return request({
+      url: '/api/push/config',
+      method: 'post',
       data
     })
   },
 
-  // 手动触发推送
-  manualPush(projectId) {
-    return request({
-      url: '/api/push/manual',
-      method: 'post',
-      data: { projectId }
-    })
-  },
-
   // 获取推送日志列表
-  getPushLogList(params) {
+  getLogList(params) {
     return request({
-      url: '/api/push/logs',
-      method: 'get',
-      params
-    })
-  },
-
-  // 获取推送统计
-  getPushStatistics(params) {
-    return request({
-      url: '/api/push/statistics',
-      method: 'get',
-      params
+      url: '/api/push/log/list',
+      method: 'post',
+      data: params
     })
   },
 
   // 撤销推送
   cancelPush(logId) {
     return request({
-      url: `/api/push/cancel/${logId}`,
-      method: 'post'
+      url: '/api/push/log/cancel',
+      method: 'post',
+      params: { logId }
+    })
+  },
+
+  // 手动推送
+  manualPush(configId) {
+    return request({
+      url: '/api/push/manual',
+      method: 'post',
+      params: { configId }
+    })
+  },
+
+  // 启动自动推送
+  startAutoPush(configId) {
+    return request({
+      url: '/api/push/auto/start',
+      method: 'post',
+      params: { configId }
+    })
+  },
+
+  // 停止自动推送
+  stopAutoPush(configId) {
+    return request({
+      url: '/api/push/auto/stop',
+      method: 'post',
+      params: { configId }
     })
   }
 }
