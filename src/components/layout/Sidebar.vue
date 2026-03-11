@@ -52,7 +52,8 @@ import {
   DataAnalysis,
   Folder,
   Upload,
-  DataBoard
+  DataBoard,
+  OfficeBuilding
 } from '@element-plus/icons-vue'
 import routes from '@/router/routes'
 

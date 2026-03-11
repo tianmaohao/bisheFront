@@ -21,7 +21,14 @@
             <el-input v-model="searchForm.realName" placeholder="姓名" clearable />
           </el-form-item>
           <el-form-item label="部门">
-            <el-input v-model="searchForm.department" placeholder="部门" clearable style="width: 150px" />
+            <el-select v-model="searchForm.department" placeholder="部门" clearable filterable style="width: 150px">
+              <el-option
+                  v-for="dept in deptList"
+                  :key="dept.deptId"
+                  :label="dept.deptName"
+                  :value="dept.deptName"
+              />
+            </el-select>
           </el-form-item>
           <el-form-item label="状态">
             <el-select v-model="searchForm.status" placeholder="状态" clearable style="width: 100px">
@@ -90,7 +97,14 @@
           <el-input v-model="form.realName" />
         </el-form-item>
         <el-form-item label="部门">
-          <el-input v-model="form.department" />
+          <el-select v-model="form.department" placeholder="请选择部门" filterable style="width: 100%">
+            <el-option
+                v-for="dept in deptList"
+                :key="dept.deptId"
+                :label="dept.deptName"
+                :value="dept.deptName"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="等级">
           <el-select v-model="form.level" placeholder="请选择">
@@ -112,12 +126,12 @@
   </div>
 </template>
 
-<script setup>
-import { reactive, ref, computed, onMounted } from 'vue'
+<script setup>import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { userApi } from '@/api/modules/user'
+import { deptApi } from '@/api/modules/dept'
 
 const router = useRouter()
 
@@ -139,6 +153,7 @@ const pagination = reactive({
 
 const dialogVisible = ref(false)
 const currentUser = ref(null)
+const deptList = ref([])
 const form = reactive({
   id: null,
   username: '',
@@ -158,6 +173,17 @@ const filteredList = computed(() => {
   // })、
   return rawList.value
 })
+
+const fetchDeptList = async () => {
+  try {
+    const res = await deptApi.getAllDepts()
+    if (res.data) {
+      deptList.value = res.data
+    }
+  } catch (error) {
+    console.error('获取部门列表失败:', error)
+  }
+}
 
 const pagedList = computed(() => {
   const start = (pagination.page - 1) * pagination.size
@@ -257,7 +283,10 @@ const handleSave = async () => {
   fetchList()
 }
 
-onMounted(fetchList)
+onMounted(() => {
+  fetchDeptList()
+  fetchList()
+})
 </script>
 
 <style lang="less" scoped>

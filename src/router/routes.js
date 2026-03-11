@@ -172,6 +172,27 @@ const routes = [
         ]
       },
       {
+        path: 'dept',
+        name: 'DeptManage',
+        redirect: '/dept/list',
+        meta: {
+          title: '部门管理',
+          requiresAuth: true,
+          icon: 'OfficeBuilding'
+        },
+        children: [
+          {
+            path: 'list',
+            name: 'DeptList',
+            component: () => import('@/views/dept/List.vue'),
+            meta: {
+              title: '部门列表',
+              requiresAuth: true
+            }
+          }
+        ]
+      },
+      {
         path: 'dashboard-visual',
         name: 'DashboardVisual',
         component: () => import('@/views/dashboard/Visual.vue'),
