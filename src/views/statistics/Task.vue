@@ -16,7 +16,6 @@
           <el-select v-model="filterForm.dimension" @change="loadData">
             <el-option label="按人员" value="user" />
             <el-option label="按部门" value="dept" />
-            <el-option label="按项目类型" value="projectType" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -86,7 +85,6 @@ const dimensionLabel = computed(() => {
   switch (filterForm.dimension) {
     case 'user': return '人员'
     case 'dept': return '部门'
-    case 'projectType': return '项目类型'
     default: return '维度'
   }
 })
