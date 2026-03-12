@@ -5,43 +5,32 @@
       <el-form :inline="true" :model="filterForm">
         <el-form-item label="时间周期">
           <el-date-picker
-            v-model="filterForm.dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            @change="handleFilterChange"
+              v-model="filterForm.dateRange"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              value-format="YYYY-MM-DD"
+              @change="handleFilterChange"
           />
         </el-form-item>
-        <el-form-item label="合作客户">
+        <el-form-item label="项目维度">
           <el-select
-            v-model="filterForm.customer"
-            placeholder="请选择客户"
-            clearable
-            @change="handleFilterChange"
-            style="width: 150px"
+              v-model="filterForm.projectId"
+              placeholder="请选择项目"
+              clearable
+              @change="handleFilterChange"
+              style="width: 200px"
           >
             <el-option
-              v-for="customer in customerList"
-              :key="customer"
-              :label="customer"
-              :value="customer"
+                label="全部项目"
+                :value="null"
             />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="项目状态">
-          <el-select
-            v-model="filterForm.status"
-            placeholder="请选择状态"
-            clearable
-            @change="handleFilterChange"
-            style="width: 150px"
-          >
             <el-option
-              v-for="(label, value) in PROJECT_STATUS_MAP"
-              :key="value"
-              :label="label.label"
-              :value="value"
+                v-for="project in projectList"
+                :key="project.id"
+                :label="project.name"
+                :value="project.id"
             />
           </el-select>
         </el-form-item>
@@ -51,7 +40,7 @@
         </el-form-item>
       </el-form>
     </el-card>
-    
+
     <!-- 核心指标卡片 -->
     <el-row :gutter="20" class="metrics-row">
       <el-col :xs="24" :sm="12" :md="6" v-for="metric in metrics" :key="metric.key">
@@ -69,7 +58,7 @@
         </el-card>
       </el-col>
     </el-row>
-    
+
     <!-- 图表区域 -->
     <el-row :gutter="20">
       <el-col :xs="24" :sm="24" :md="12">
@@ -89,14 +78,14 @@
         </el-card>
       </el-col>
     </el-row>
-    
+
     <el-row :gutter="20" style="margin-top: 20px;">
       <el-col :span="24">
         <el-card>
           <template #header>
-            <span>项目推进状态与数据推送效果关联分析</span>
+            <span>按期交付率趋势</span>
           </template>
-          <div ref="correlationChartRef" style="height: 400px;"></div>
+          <div ref="onTimeDeliveryChartRef" style="height: 350px;"></div>
         </el-card>
       </el-col>
     </el-row>
@@ -107,24 +96,24 @@
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import { ArrowUp, ArrowDown } from '@element-plus/icons-vue'
-import { PROJECT_STATUS_MAP } from '@/config/constants'
 import { dashboardApi } from '@/api/modules/dashboard'
+import { projectApi } from '@/api/modules/project'
+import { ElMessage } from 'element-plus'
 
 const successRateChartRef = ref(null)
 const frequencyChartRef = ref(null)
-const correlationChartRef = ref(null)
+const onTimeDeliveryChartRef = ref(null)
 
 let successRateChart = null
 let frequencyChart = null
-let correlationChart = null
+let onTimeDeliveryChart = null
 
 const filterForm = reactive({
   dateRange: [],
-  customer: '',
-  status: ''
+  projectId: null
 })
 
-const customerList = ref(['客户A', '客户B', '客户C', '客户D'])
+const projectList = ref([])
 
 const metrics = ref([
   { key: 'pushSuccessRate', label: '推送成功率', value: '95.5%', trend: 2.3 },
@@ -132,6 +121,18 @@ const metrics = ref([
   { key: 'pushCount', label: '推送总次数', value: '1,234', trend: -5.2 },
   { key: 'projectCount', label: '项目总数', value: '156', trend: 8.1 }
 ])
+
+// 获取项目列表
+const fetchProjectList = async () => {
+  try {
+    const res = await projectApi.getProjectList({ pageNum: 1, pageSize: 100 })
+    if (res.data && res.data.list) {
+      projectList.value = res.data.list
+    }
+  } catch (error) {
+    console.error('Fetch project list error:', error)
+  }
+}
 
 // 初始化图表
 const initCharts = () => {
@@ -141,10 +142,10 @@ const initCharts = () => {
   if (frequencyChartRef.value) {
     frequencyChart = echarts.init(frequencyChartRef.value)
   }
-  if (correlationChartRef.value) {
-    correlationChart = echarts.init(correlationChartRef.value)
+  if (onTimeDeliveryChartRef.value) {
+    onTimeDeliveryChart = echarts.init(onTimeDeliveryChartRef.value)
   }
-  
+
   updateCharts()
 }
 
@@ -153,11 +154,13 @@ const updateCharts = async () => {
   const params = {
     startDate: filterForm.dateRange?.[0],
     endDate: filterForm.dateRange?.[1],
-    customer: filterForm.customer,
-    status: filterForm.status
+    projectId: filterForm.projectId
   }
-  
+
   try {
+    // 判断是否选择了项目
+    const isAllProjects = !filterForm.projectId
+
     // 获取推送成功率趋势
     const successRateRes = await dashboardApi.getPushSuccessRate(params)
     if (successRateChart && successRateRes.data) {
@@ -167,7 +170,11 @@ const updateCharts = async () => {
         },
         xAxis: {
           type: 'category',
-          data: successRateRes.data.dates || []
+          data: successRateRes.data.dates || [],
+          axisLabel: {
+            interval: 0,
+            rotate: isAllProjects ? 30 : 0 // 全部项目时倾斜显示
+          }
         },
         yAxis: {
           type: 'value',
@@ -195,7 +202,7 @@ const updateCharts = async () => {
         ]
       })
     }
-    
+
     // 获取推送频次统计
     const frequencyRes = await dashboardApi.getPushFrequencyTrend(params)
     if (frequencyChart && frequencyRes.data) {
@@ -205,7 +212,11 @@ const updateCharts = async () => {
         },
         xAxis: {
           type: 'category',
-          data: frequencyRes.data.dates || []
+          data: frequencyRes.data.dates || [],
+          axisLabel: {
+            interval: 0,
+            rotate: isAllProjects ? 30 : 0
+          }
         },
         yAxis: {
           type: 'value'
@@ -226,50 +237,43 @@ const updateCharts = async () => {
         ]
       })
     }
-    
-    // 获取关联分析
-    const correlationRes = await dashboardApi.getProjectPushAnalysis(params)
-    if (correlationChart && correlationRes.data) {
-      correlationChart.setOption({
+
+    // 获取按期交付率趋势
+    const onTimeDeliveryRes = await dashboardApi.getOnTimeDeliveryRate(params)
+    if (onTimeDeliveryChart && onTimeDeliveryRes.data) {
+      onTimeDeliveryChart.setOption({
         tooltip: {
           trigger: 'axis'
         },
-        legend: {
-          data: ['项目状态分布', '推送成功率']
-        },
         xAxis: {
           type: 'category',
-          data: correlationRes.data.statuses || []
-        },
-        yAxis: [
-          {
-            type: 'value',
-            name: '项目数量',
-            position: 'left'
-          },
-          {
-            type: 'value',
-            name: '推送成功率(%)',
-            position: 'right',
-            max: 100
+          data: onTimeDeliveryRes.data.dates || [],
+          axisLabel: {
+            interval: 0,
+            rotate: isAllProjects ? 30 : 0
           }
-        ],
+        },
+        yAxis: {
+          type: 'value',
+          max: 100,
+          axisLabel: {
+            formatter: '{value}%'
+          }
+        },
         series: [
           {
-            name: '项目状态分布',
-            type: 'bar',
-            data: correlationRes.data.projectCounts || [],
+            name: '按期交付率',
+            data: onTimeDeliveryRes.data.rates || [],
+            type: 'line',
+            smooth: true,
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
+                { offset: 1, color: 'rgba(64, 158, 255, 0.1)' }
+              ])
+            },
             itemStyle: {
               color: '#409EFF'
-            }
-          },
-          {
-            name: '推送成功率',
-            type: 'line',
-            yAxisIndex: 1,
-            data: correlationRes.data.pushRates || [],
-            itemStyle: {
-              color: '#67C23A'
             }
           }
         ]
@@ -277,22 +281,65 @@ const updateCharts = async () => {
     }
   } catch (error) {
     console.error('Update charts error:', error)
-    // 使用模拟数据
+    ElMessage.error('加载图表数据失败')
     loadMockData()
+  }
+}
+
+// 加载核心指标数据
+const fetchMetrics = async () => {
+  const params = {
+    startDate: filterForm.dateRange?.[0],
+    endDate: filterForm.dateRange?.[1],
+    projectId: filterForm.projectId
+  }
+
+  try {
+    const res = await dashboardApi.getDashboardData(params)
+    if (res.data) {
+      // 更新推送成功率
+      if (res.data.pushStats) {
+        metrics.value[0].value = `${res.data.pushStats.successRate}%`
+      }
+      // 更新推送总次数
+      if (res.data.pushStats) {
+        metrics.value[2].value = res.data.pushStats.todayCount.toLocaleString()
+      }
+      // 更新项目总数（不随项目维度变化）
+      if (res.data.projectStats) {
+        metrics.value[3].value = res.data.projectStats.total.toLocaleString()
+      }
+    }
+  } catch (error) {
+    console.error('Fetch metrics error:', error)
   }
 }
 
 // 加载模拟数据
 const loadMockData = () => {
+  const isAllProjects = !filterForm.projectId
+  const dates = isAllProjects
+      ? projectList.value.map(p => p.name)
+      : ['1 月', '2 月', '3 月', '4 月', '5 月', '6 月']
+
   // 推送成功率趋势
   if (successRateChart) {
     successRateChart.setOption({
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: ['1月', '2月', '3月', '4月', '5月', '6月'] },
+      xAxis: {
+        type: 'category',
+        data: dates,
+        axisLabel: {
+          interval: 0,
+          rotate: isAllProjects ? 30 : 0
+        }
+      },
       yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
       series: [{
         name: '推送成功率',
-        data: [92, 94, 96, 95, 97, 95.5],
+        data: isAllProjects
+            ? projectList.value.map(() => 90 + Math.random() * 10)
+            : [92, 94, 96, 95, 97, 95.5],
         type: 'line',
         smooth: true,
         areaStyle: { color: 'rgba(103, 194, 58, 0.3)' },
@@ -300,48 +347,66 @@ const loadMockData = () => {
       }]
     })
   }
-  
+
   // 推送频次统计
   if (frequencyChart) {
     frequencyChart.setOption({
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: ['1月', '2月', '3月', '4月', '5月', '6月'] },
+      xAxis: {
+        type: 'category',
+        data: dates,
+        axisLabel: {
+          interval: 0,
+          rotate: isAllProjects ? 30 : 0
+        }
+      },
       yAxis: { type: 'value' },
       series: [{
         name: '推送频次',
-        data: [120, 150, 180, 200, 160, 140],
+        data: isAllProjects
+            ? projectList.value.map(() => Math.floor(100 + Math.random() * 100))
+            : [120, 150, 180, 200, 160, 140],
         type: 'bar',
         itemStyle: { color: '#409EFF' }
       }]
     })
   }
-  
-  // 关联分析
-  if (correlationChart) {
-    correlationChart.setOption({
+
+  // 按期交付率趋势
+  if (onTimeDeliveryChart) {
+    onTimeDeliveryChart.setOption({
       tooltip: { trigger: 'axis' },
-      legend: { data: ['项目状态分布', '推送成功率'] },
-      xAxis: { type: 'category', data: ['需求发起', '开发实施', '部署推进', '交付完成'] },
-      yAxis: [
-        { type: 'value', name: '项目数量', position: 'left' },
-        { type: 'value', name: '推送成功率(%)', position: 'right', max: 100 }
-      ],
-      series: [
-        { name: '项目状态分布', type: 'bar', data: [10, 20, 15, 30], itemStyle: { color: '#409EFF' } },
-        { name: '推送成功率', type: 'line', yAxisIndex: 1, data: [0, 0, 95, 98], itemStyle: { color: '#67C23A' } }
-      ]
+      xAxis: {
+        type: 'category',
+        data: dates,
+        axisLabel: {
+          interval: 0,
+          rotate: isAllProjects ? 30 : 0
+        }
+      },
+      yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
+      series: [{
+        name: '按期交付率',
+        data: isAllProjects
+            ? projectList.value.map(() => 80 + Math.random() * 15)
+            : [85, 87, 88, 89, 88, 88.2],
+        type: 'line',
+        smooth: true,
+        areaStyle: { color: 'rgba(64, 158, 255, 0.3)' },
+        itemStyle: { color: '#409EFF' }
+      }]
     })
   }
 }
 
 const handleFilterChange = () => {
+  fetchMetrics()
   updateCharts()
 }
 
 const handleReset = () => {
   filterForm.dateRange = []
-  filterForm.customer = ''
-  filterForm.status = ''
+  filterForm.projectId = null
   handleFilterChange()
 }
 
@@ -349,10 +414,12 @@ const handleReset = () => {
 const handleResize = () => {
   successRateChart?.resize()
   frequencyChart?.resize()
-  correlationChart?.resize()
+  onTimeDeliveryChart?.resize()
 }
 
 onMounted(() => {
+  fetchProjectList()
+  fetchMetrics()
   setTimeout(() => {
     initCharts()
   }, 100)
@@ -362,7 +429,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   successRateChart?.dispose()
   frequencyChart?.dispose()
-  correlationChart?.dispose()
+  onTimeDeliveryChart?.dispose()
   window.removeEventListener('resize', handleResize)
 })
 </script>
@@ -372,10 +439,10 @@ onBeforeUnmount(() => {
   .filter-card {
     margin-bottom: 20px;
   }
-  
+
   .metrics-row {
     margin-bottom: 20px;
-    
+
     .metric-card {
       .metric-content {
         .metric-label {
@@ -383,23 +450,23 @@ onBeforeUnmount(() => {
           color: @text-color-secondary;
           margin-bottom: 10px;
         }
-        
+
         .metric-value {
           font-size: 28px;
           font-weight: bold;
           color: @text-color-primary;
           margin-bottom: 10px;
         }
-        
+
         .metric-trend {
           display: flex;
           align-items: center;
           font-size: 12px;
-          
+
           &.up {
             color: @success-color;
           }
-          
+
           &.down {
             color: @danger-color;
           }
@@ -409,4 +476,3 @@ onBeforeUnmount(() => {
   }
 }
 </style>
-
