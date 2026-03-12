@@ -97,12 +97,18 @@
           <el-input v-model="form.realName" />
         </el-form-item>
         <el-form-item label="部门">
-          <el-select v-model="form.department" placeholder="请选择部门" filterable style="width: 100%">
+          <el-select
+              v-model="form.deptId"
+              placeholder="请选择部门"
+              filterable
+              style="width: 100%"
+              @change="handleDeptChange"
+          >
             <el-option
                 v-for="dept in deptList"
                 :key="dept.deptId"
                 :label="dept.deptName"
-                :value="dept.deptName"
+                :value="dept.deptId"
             />
           </el-select>
         </el-form-item>
@@ -160,6 +166,7 @@ const form = reactive({
   password: '',
   realName: '',
   department: '',
+  deptId: null,
   level: 1
 })
 
@@ -182,6 +189,13 @@ const fetchDeptList = async () => {
     }
   } catch (error) {
     console.error('获取部门列表失败:', error)
+  }
+}
+
+const handleDeptChange = (deptId) => {
+  const selectedDept = deptList.value.find(dept => dept.deptId === deptId)
+  if (selectedDept) {
+    form.department = selectedDept.deptName
   }
 }
 
@@ -245,6 +259,7 @@ const handleCreate = () => {
     password: '',
     realName: '',
     department: '',
+    deptId: null,
     level: 1
   })
   dialogVisible.value = true
@@ -257,6 +272,7 @@ const handleEdit = (row) => {
     username: row.username,
     realName: row.realName,
     department: row.department,
+    deptId: row.deptId,
     level: row.level,
     password: ''
   })
