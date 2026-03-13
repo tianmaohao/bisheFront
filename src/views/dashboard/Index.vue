@@ -1,8 +1,34 @@
 <template>
   <div class="dashboard">
+    <!-- 筛选条件 -->
+    <el-card class="filter-card">
+      <el-form :inline="true" :model="filterForm" class="filter-form">
+        <el-form-item label="时间区间">
+          <el-date-picker
+              v-model="filterForm.dateRange"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              value-format="YYYY-MM-DD"
+              @change="handleDateChange"
+          />
+        </el-form-item>
+        <el-form-item label="维度">
+          <el-radio-group v-model="filterForm.dimension" @change="fetchData">
+            <el-radio label="personal">个人</el-radio>
+            <el-radio label="team">团队</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="fetchData">查询</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-row">
-      <el-col :xs="24" :sm="12" :md="6" v-for="stat in stats" :key="stat.key">
+      <el-col :xs="24" :sm="12" :md="8" v-for="stat in stats" :key="stat.key">
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-icon" :style="{ backgroundColor: stat.color }">
@@ -18,7 +44,7 @@
         </el-card>
       </el-col>
     </el-row>
-    
+
     <!-- 图表区域 -->
     <el-row :gutter="20" class="charts-row">
       <el-col :xs="24" :sm="24" :md="12">
@@ -32,13 +58,13 @@
       <el-col :xs="24" :sm="24" :md="12">
         <el-card>
           <template #header>
-            <span>按期交付率</span>
+            <span>任务准时完成率</span>
           </template>
-          <div ref="deliveryRateChartRef" style="height: 300px;"></div>
+          <div ref="taskOnTimeRateChartRef" style="height: 300px;"></div>
         </el-card>
       </el-col>
     </el-row>
-    
+
     <el-row :gutter="20" class="charts-row">
       <el-col :xs="24" :sm="24" :md="12">
         <el-card>
@@ -51,21 +77,65 @@
       <el-col :xs="24" :sm="24" :md="12">
         <el-card>
           <template #header>
-            <span>推送频次趋势</span>
+            <div class="chart-header">
+              <span>任务排行榜</span>
+              <el-select v-model="rankSortBy" size="small" @change="fetchRanking">
+                <el-option label="准时完成率" value="onTimeRate" />
+                <el-option label="完成任务总数" value="totalTasks" />
+              </el-select>
+            </div>
           </template>
-          <div ref="pushTrendChartRef" style="height: 300px;"></div>
+          <div class="ranking-table-container">
+            <el-table :data="rankingData" style="width: 100%" :height="260">
+              <el-table-column type="index" label="排名" width="60" :index="indexMethod" />
+              <el-table-column prop="userName" label="姓名" width="100" />
+              <el-table-column v-if="filterForm.dimension === 'personal'" prop="department" label="部门" width="120" />
+              <el-table-column
+                  v-if="rankSortBy === 'onTimeRate'"
+                  prop="onTimeRate"
+                  label="准时完成率"
+                  width="120"
+              >
+                <template #default="{ row }">
+                  {{ row.onTimeRate }}%
+                </template>
+              </el-table-column>
+              <el-table-column
+                  v-if="rankSortBy === 'totalTasks'"
+                  prop="totalTasks"
+                  label="完成总任务数"
+                  width="120"
+              />
+              <el-table-column
+                  v-if="rankSortBy === 'onTimeRate'"
+                  prop="totalTasks"
+                  label="完成总任务数"
+                  width="120"
+              />
+              <el-table-column
+                  v-if="rankSortBy === 'totalTasks'"
+                  prop="onTimeRate"
+                  label="准时完成率"
+                  width="120"
+              >
+                <template #default="{ row }">
+                  {{ row.onTimeRate }}%
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
         </el-card>
       </el-col>
     </el-row>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+<script setup>import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import { useProjectStore } from '@/stores/modules/project'
 import { usePushStore } from '@/stores/modules/push'
 import { Folder, Check, Close, Upload } from '@element-plus/icons-vue'
+import { dashboardApi } from '@/api/modules/dashboard'
 
 const FolderIcon = Folder
 const CheckIcon = Check
@@ -75,44 +145,71 @@ const UploadIcon = Upload
 const projectStore = useProjectStore()
 const pushStore = usePushStore()
 
+const filterForm = ref({
+  dateRange: [],
+  dimension: 'personal',
+  startDate: null,
+  endDate: null
+})
+
+const rankSortBy = ref('onTimeRate')
+
 const statusChartRef = ref(null)
-const deliveryRateChartRef = ref(null)
+const taskOnTimeRateChartRef = ref(null)
 const pushSuccessChartRef = ref(null)
-const pushTrendChartRef = ref(null)
+const rankingChartRef = ref(null)
 
 let statusChart = null
-let deliveryRateChart = null
+let taskOnTimeRateChart = null
 let pushSuccessChart = null
-let pushTrendChart = null
+let rankingChart = null
 
 const stats = ref([
   { key: 'total', label: '项目总数', value: 0, icon: FolderIcon, color: '#409EFF' },
   { key: 'delivered', label: '已交付', value: 0, icon: CheckIcon, color: '#67C23A' },
   { key: 'overdue', label: '超期项目', value: 0, icon: CloseIcon, color: '#F56C6C' },
-  { key: 'pushCount', label: '今日推送', value: 0, icon: UploadIcon, color: '#E6A23C' }
 ])
+
+// 处理日期选择
+const handleDateChange = (value) => {
+  if (value && value.length === 2) {
+    filterForm.value.startDate = value[0]
+    filterForm.value.endDate = value[1]
+  } else {
+    filterForm.value.startDate = null
+    filterForm.value.endDate = null
+  }
+}
+
+// 索引方法
+const indexMethod = (index) => {
+  return index + 1
+}
 
 // 初始化图表
 const initCharts = () => {
   if (statusChartRef.value) {
     statusChart = echarts.init(statusChartRef.value)
   }
-  if (deliveryRateChartRef.value) {
-    deliveryRateChart = echarts.init(deliveryRateChartRef.value)
+  if (taskOnTimeRateChartRef.value) {
+    taskOnTimeRateChart = echarts.init(taskOnTimeRateChartRef.value)
   }
   if (pushSuccessChartRef.value) {
     pushSuccessChart = echarts.init(pushSuccessChartRef.value)
   }
-  if (pushTrendChartRef.value) {
-    pushTrendChart = echarts.init(pushTrendChartRef.value)
-  }
-  
+
   updateCharts()
 }
 
 // 更新图表数据
 const updateCharts = () => {
-  // 项目状态分布 - 环形图
+  updateStatusChart()
+  updateTaskOnTimeRateChart()
+  updatePushSuccessChart()
+}
+
+// 更新项目状态分布图表
+const updateStatusChart = () => {
   if (statusChart) {
     statusChart.setOption({
       tooltip: {
@@ -154,16 +251,28 @@ const updateCharts = () => {
       ]
     })
   }
-  
-  // 按期交付率 - 柱状图
-  if (deliveryRateChart) {
-    deliveryRateChart.setOption({
+}
+
+// 更新任务准时完成率图表
+const updateTaskOnTimeRateChart = () => {
+  if (taskOnTimeRateChart && taskOnTimeRateData.value) {
+    const names = taskOnTimeRateData.value.dataList.map(item => item.name)
+    const rates = taskOnTimeRateData.value.dataList.map(item => item.onTimeRate)
+
+    taskOnTimeRateChart.setOption({
       tooltip: {
-        trigger: 'axis'
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow'
+        }
       },
       xAxis: {
         type: 'category',
-        data: ['个人', '团队']
+        data: names,
+        axisLabel: {
+          interval: 0,
+          rotate: 30
+        }
       },
       yAxis: {
         type: 'value',
@@ -174,7 +283,7 @@ const updateCharts = () => {
       },
       series: [
         {
-          data: [85, 78],
+          data: rates,
           type: 'bar',
           itemStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -182,13 +291,20 @@ const updateCharts = () => {
               { offset: 0.5, color: '#188df0' },
               { offset: 1, color: '#188df0' }
             ])
+          },
+          label: {
+            show: true,
+            position: 'top',
+            formatter: '{c}%'
           }
         }
       ]
     })
   }
-  
-  // 推送成功率 - 环形图
+}
+
+// 更新推送成功率图表
+const updatePushSuccessChart = () => {
   if (pushSuccessChart) {
     pushSuccessChart.setOption({
       tooltip: {
@@ -229,64 +345,82 @@ const updateCharts = () => {
       ]
     })
   }
-  
-  // 推送频次趋势 - 折线图
-  if (pushTrendChart) {
-    pushTrendChart.setOption({
-      tooltip: {
-        trigger: 'axis'
-      },
-      xAxis: {
-        type: 'category',
-        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-      },
-      yAxis: {
-        type: 'value'
-      },
-      series: [
-        {
-          data: [12, 15, 18, 20, 16, 14, 10],
-          type: 'line',
-          smooth: true,
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-              { offset: 1, color: 'rgba(64, 158, 255, 0.1)' }
-            ])
-          }
-        }
-      ]
-    })
-  }
 }
 
-// 获取统计数据
+const taskOnTimeRateData = ref(null)
+const rankingData = ref([])
+
+
 const fetchStatistics = async () => {
   try {
     // 获取项目统计
-    await projectStore.fetchStatistics()
-    // 获取推送统计
-    await pushStore.fetchPushStatistics()
-    
-    // 更新统计数据
-    // 这里应该从store中获取实际数据
-    stats.value[0].value = projectStore.projectList.length
-    stats.value[3].value = pushStore.todayPushCount
+    const projectStatsRes = await projectStore.fetchStatistics()
+
+    // 从响应中获取数据
+    if (projectStatsRes && projectStatsRes.data) {
+      const statsData = projectStatsRes.data
+      stats.value[0].value = statsData.total || 0
+      stats.value[1].value = statsData.byStatus.DELIVERED || 0
+      stats.value[2].value = statsData.overdueCount || 0
+    } else {
+      // 如果返回数据为空，使用 projectList 长度
+      stats.value[0].value = projectStore.projectList.length
+    }
   } catch (error) {
     console.error('Fetch statistics error:', error)
+    // 发生错误时设置默认值
+    stats.value.forEach(stat => stat.value = 0)
   }
+}
+
+// 获取任务准时完成率
+const fetchTaskOnTimeRate = async () => {
+  try {
+    const params = {
+      dimension: filterForm.value.dimension,
+      startDate: filterForm.value.startDate,
+      endDate: filterForm.value.endDate
+    }
+    const res = await dashboardApi.getTaskOnTimeRate(params)
+    taskOnTimeRateData.value = res.data
+    updateTaskOnTimeRateChart()
+  } catch (error) {
+    console.error('Fetch task on-time rate error:', error)
+  }
+}
+
+// 获取排行榜数据
+const fetchRanking = async () => {
+  try {
+    const params = {
+      dimension: filterForm.value.dimension,
+      startDate: filterForm.value.startDate,
+      endDate: filterForm.value.endDate,
+      sortBy: rankSortBy.value
+    }
+    const res = await dashboardApi.getTaskRanking(params)
+    rankingData.value = res.data
+  } catch (error) {
+    console.error('Fetch ranking error:', error)
+  }
+}
+
+// 获取所有数据
+const fetchData = async () => {
+  await fetchStatistics()
+  await fetchTaskOnTimeRate()
+  await fetchRanking()
 }
 
 // 窗口大小改变时重新调整图表
 const handleResize = () => {
   statusChart?.resize()
-  deliveryRateChart?.resize()
+  taskOnTimeRateChart?.resize()
   pushSuccessChart?.resize()
-  pushTrendChart?.resize()
 }
 
 onMounted(() => {
-  fetchStatistics()
+  fetchData()
   setTimeout(() => {
     initCharts()
   }, 100)
@@ -295,23 +429,35 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   statusChart?.dispose()
-  deliveryRateChart?.dispose()
+  taskOnTimeRateChart?.dispose()
   pushSuccessChart?.dispose()
-  pushTrendChart?.dispose()
   window.removeEventListener('resize', handleResize)
 })
 </script>
 
-<style lang="less" scoped>
-.dashboard {
+<style lang="less" scoped>.dashboard {
+  .filter-card {
+    margin-bottom: 20px;
+
+    .filter-form {
+      .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+  }
+
   .stats-row {
     margin-bottom: 20px;
-    
+
     .stat-card {
+      height: 100%;
+
       .stat-content {
         display: flex;
         align-items: center;
-        
+
         .stat-icon {
           width: 60px;
           height: 60px;
@@ -321,29 +467,39 @@ onBeforeUnmount(() => {
           justify-content: center;
           color: #fff;
           margin-right: 15px;
+          flex-shrink: 0;
         }
-        
+
         .stat-info {
           flex: 1;
-          
+          min-width: 0;
+
           .stat-value {
             font-size: 24px;
             font-weight: bold;
             color: @text-color-primary;
             margin-bottom: 5px;
           }
-          
+
           .stat-label {
             font-size: 14px;
             color: @text-color-secondary;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
         }
       }
     }
   }
-  
+
   .charts-row {
     margin-bottom: 20px;
+  }
+
+  .ranking-table-container {
+    height: 300px;
+    overflow: hidden;
   }
 }
 </style>

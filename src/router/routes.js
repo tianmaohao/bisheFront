@@ -22,7 +22,7 @@ const routes = [
         name: 'Dashboard',
         component: () => import('@/views/dashboard/Index.vue'),
         meta: {
-          title: '数据看板',
+          title: '首页',
           requiresAuth: true,
           icon: 'DataAnalysis'
         }

@@ -45,6 +45,32 @@ export const dashboardApi = {
       method: 'get',
       params
     })
+  },
+  // 获取任务准时完成率
+  getTaskOnTimeRate(params) {
+    return request({
+      url: '/api/dashboard/task-on-time-rate',
+      method: 'get',
+      params
+    })
+  },
+
+  // 获取任务排行榜
+  getTaskRanking(params) {
+    return request({
+      url: '/api/dashboard/task-ranking',
+      method: 'get',
+      params
+    })
+  },
+
+  // 获取项目活跃度
+  getProjectActivity(params) {
+    return request({
+      url: '/api/dashboard/project-activity',
+      method: 'get',
+      params
+    })
   }
 }
 
