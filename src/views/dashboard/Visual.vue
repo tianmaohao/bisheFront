@@ -19,8 +19,7 @@
               v-model="filterForm.projectId"
               placeholder="请选择项目"
               clearable
-              @change="handleFilterChange"
-              style="width: 200px"
+              @change="handleProjectChange"              style="width: 200px"
           >
             <el-option
                 label="全部项目"
@@ -92,8 +91,7 @@
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
+<script setup>import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import { ArrowUp, ArrowDown } from '@element-plus/icons-vue'
 import { dashboardApi } from '@/api/modules/dashboard'
@@ -116,10 +114,10 @@ const filterForm = reactive({
 const projectList = ref([])
 
 const metrics = ref([
-  { key: 'pushSuccessRate', label: '推送成功率', value: '95.5%', trend: 2.3 },
-  { key: 'onTimeDeliveryRate', label: '按期交付率', value: '88.2%', trend: 1.5 },
-  { key: 'pushCount', label: '推送总次数', value: '1,234', trend: -5.2 },
-  { key: 'projectCount', label: '项目总数', value: '156', trend: 8.1 }
+  { key: 'pushSuccessRate', label: '推送成功率', value: '95.5%', trend: 0 },
+  { key: 'onTimeDeliveryRate', label: '按期交付率', value: '0%', trend: 0 },
+  { key: 'pushCount', label: '推送总次数', value: '1,234', trend: 0 },
+  { key: 'projectCount', label: '项目总数', value: '156', trend: 0 }
 ])
 
 // 获取项目列表
@@ -173,7 +171,7 @@ const updateCharts = async () => {
           data: successRateRes.data.dates || [],
           axisLabel: {
             interval: 0,
-            rotate: isAllProjects ? 30 : 0 // 全部项目时倾斜显示
+            rotate: isAllProjects ? 30 : 0
           }
         },
         yAxis: {
@@ -238,7 +236,7 @@ const updateCharts = async () => {
       })
     }
 
-    // 获取按期交付率趋势
+    // 获取按期交付率趋势（只按时间维度，不随项目维度变化）
     const onTimeDeliveryRes = await dashboardApi.getOnTimeDeliveryRate(params)
     if (onTimeDeliveryChart && onTimeDeliveryRes.data) {
       onTimeDeliveryChart.setOption({
@@ -250,7 +248,7 @@ const updateCharts = async () => {
           data: onTimeDeliveryRes.data.dates || [],
           axisLabel: {
             interval: 0,
-            rotate: isAllProjects ? 30 : 0
+            rotate: 30
           }
         },
         yAxis: {
@@ -309,11 +307,17 @@ const fetchMetrics = async () => {
       if (res.data.projectStats) {
         metrics.value[3].value = res.data.projectStats.total.toLocaleString()
       }
+      // 更新按期交付率 - 直接从 getDashboardData 接口获取
+      if (res.data.onTimeDeliveryRate !== undefined && res.data.onTimeDeliveryRate !== null) {
+        metrics.value[1].value = `${res.data.onTimeDeliveryRate}%`
+      }
     }
   } catch (error) {
     console.error('Fetch metrics error:', error)
   }
 }
+
+
 
 // 加载模拟数据
 const loadMockData = () => {
@@ -372,30 +376,85 @@ const loadMockData = () => {
     })
   }
 
-  // 按期交付率趋势
+  // 按期交付率趋势（只按时间维度）
   if (onTimeDeliveryChart) {
     onTimeDeliveryChart.setOption({
       tooltip: { trigger: 'axis' },
       xAxis: {
         type: 'category',
-        data: dates,
+        data: ['1 月', '2 月', '3 月', '4 月', '5 月', '6 月'],
         axisLabel: {
           interval: 0,
-          rotate: isAllProjects ? 30 : 0
+          rotate: 30
         }
       },
       yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
       series: [{
         name: '按期交付率',
-        data: isAllProjects
-            ? projectList.value.map(() => 80 + Math.random() * 15)
-            : [85, 87, 88, 89, 88, 88.2],
+        data: [85, 87, 88, 89, 88, 88.2],
         type: 'line',
         smooth: true,
         areaStyle: { color: 'rgba(64, 158, 255, 0.3)' },
         itemStyle: { color: '#409EFF' }
       }]
     })
+  }
+}
+
+// 处理项目维度变化（只影响推送成功率和推送频次，不影响按期交付率）
+const handleProjectChange = () => {
+  // 项目维度变化时，只需要更新推送相关图表
+  // 按期交付率不受项目维度影响，只在时间变化时更新
+  fetchMetrics()
+  updatePushRelatedCharts()
+}
+
+// 更新推送相关图表（推送成功率、推送频次）
+const updatePushRelatedCharts = async () => {
+  const params = {
+    startDate: filterForm.dateRange?.[0],
+    endDate: filterForm.dateRange?.[1],
+    projectId: filterForm.projectId
+  }
+
+  try {
+    const isAllProjects = !filterForm.projectId
+
+    // 更新推送成功率趋势
+    const successRateRes = await dashboardApi.getPushSuccessRate(params)
+    if (successRateChart && successRateRes.data) {
+      successRateChart.setOption({
+        xAxis: {
+          data: successRateRes.data.dates || [],
+          axisLabel: {
+            interval: 0,
+            rotate: isAllProjects ? 30 : 0
+          }
+        },
+        series: [{
+          data: successRateRes.data.rates || []
+        }]
+      })
+    }
+
+    // 更新推送频次统计
+    const frequencyRes = await dashboardApi.getPushFrequencyTrend(params)
+    if (frequencyChart && frequencyRes.data) {
+      frequencyChart.setOption({
+        xAxis: {
+          data: frequencyRes.data.dates || [],
+          axisLabel: {
+            interval: 0,
+            rotate: isAllProjects ? 30 : 0
+          }
+        },
+        series: [{
+          data: frequencyRes.data.counts || []
+        }]
+      })
+    }
+  } catch (error) {
+    console.error('Update push related charts error:', error)
   }
 }
 
