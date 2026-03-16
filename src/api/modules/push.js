@@ -12,9 +12,8 @@ export const pushApi = {
   // 根据项目 ID 获取推送配置
   getConfigByProjectId(projectId) {
     return request({
-      url: '/api/push/config',
+      url: `/api/push/config/${projectId}`,
       method: 'get',
-      params: { projectId }
     })
   },
 
