@@ -329,8 +329,28 @@ const handleSave = async () => {
       loading.value = true
       try {
         const submitData = {
-          ...form,
-          autoPush: form.autoPush ? 1 : 0
+          id: form.id,
+          projectId: form.projectId,
+          configName: `${form.pushType}推送配置`,
+          protocol: form.pushType,
+          mqttHost: form.mqttHost,
+          mqttPort: form.mqttPort,
+          mqttUsername: form.mqttUsername,
+          mqttPassword: form.mqttPassword,
+          mqttTopic: form.mqttTopic,
+          rabbitmqHost: form.rabbitmqHost,
+          rabbitmqPort: form.rabbitmqPort,
+          rabbitmqVhost: form.rabbitmqVhost,
+          rabbitmqUsername: form.rabbitmqUsername,
+          rabbitmqPassword: form.rabbitmqPassword,
+          rabbitmqExchange: form.rabbitmqExchange,
+          rabbitmqRoutingKey: form.rabbitmqRoutingKey,
+          webhookUrl: form.httpUrl,
+          autoPush: form.autoPush ? 1 : 0,
+          scheduledPush: form.isManualPush === 0 ? 1 : 0,
+          pushInterval: form.pushInterval,
+          pushStatus: form.pushStatus || 0,
+          targetUnit: form.targetUnit
         }
         await pushStore.savePushConfig(submitData)
         ElMessage.success('配置保存成功')
