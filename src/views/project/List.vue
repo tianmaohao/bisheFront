@@ -72,8 +72,18 @@
         </el-table-column>
         <el-table-column prop="isOverdue" label="是否超期" width="100">
           <template #default="{ row }">
-            <el-tag v-if="isOverdue(row.deadline)" type="danger">超期</el-tag>
-            <el-tag v-else type="success">正常</el-tag>
+            <!-- 如果状态为空，根据交付日期和当前时间比较 -->
+            <el-tag v-if="!row.status" :type="isOverdueByDate(row.deadline) ? 'danger' : 'success'">
+              {{ isOverdueByDate(row.deadline) ? '超期' : '正常' }}
+            </el-tag>
+            <!-- 超期交付状态 -->
+            <el-tag v-else-if="row.status === 'DELIVERED_OVERDUE'" type="danger">超期</el-tag>
+            <!-- 按期交付状态 -->
+            <el-tag v-else-if="row.status === 'DELIVERED'" type="success">正常</el-tag>
+            <!-- 其他状态：根据交付日期判断 -->
+            <el-tag v-else :type="isOverdueByDate(row.deadline) ? 'danger' : 'success'">
+              {{ isOverdueByDate(row.deadline) ? '超期' : '正常' }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
@@ -136,6 +146,19 @@ const searchForm = reactive({
   name: '',
   status: ''
 })
+
+// 添加判断是否超期的函数（只比较日期）
+const isOverdueByDate = (deadline) => {
+  if (!deadline) return false
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const deadlineDate = new Date(deadline)
+  deadlineDate.setHours(0, 0, 0, 0)
+
+  return deadlineDate < today
+}
 
 const pagination = reactive({
   page: 1,

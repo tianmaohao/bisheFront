@@ -554,6 +554,8 @@ const nodeStatusText = (status) => {
       return '已完成'
     case 'pending-expired':
       return '已超期'
+    case 'node_unknown_status':
+      return '未知状态'
     default:
       return status || '-'
   }

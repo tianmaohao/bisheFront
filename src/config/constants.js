@@ -1,20 +1,23 @@
 // 项目状态枚举
+
 export const PROJECT_STATUS = {
   REQUIREMENT_INITIATED: 'REQUIREMENT_INITIATED', // 需求发起
   DEVELOPMENT: 'DEVELOPMENT', // 开发实施
   DEPLOYMENT: 'DEPLOYMENT', // 部署推进
-  DELIVERED: 'DELIVERED', // 交付完成
+  DELIVERED: 'DELIVERED', // 交付完成（按期）
+  DELIVERED_OVERDUE: 'DELIVERED_OVERDUE', // 交付完成（超期）
   RETURNED: 'RETURNED' // 已退回
 }
 
-// 项目状态标签映射
 export const PROJECT_STATUS_MAP = {
   REQUIREMENT_INITIATED: { label: '需求发起', type: 'info' },
   DEVELOPMENT: { label: '开发实施', type: 'warning' },
   DEPLOYMENT: { label: '部署推进', type: 'primary' },
   DELIVERED: { label: '交付完成', type: 'success' },
+  DELIVERED_OVERDUE: { label: '交付完成', type: 'success' },
   RETURNED: { label: '已退回', type: 'danger' }
 }
+
 
 // 推送状态枚举
 export const PUSH_STATUS = {
