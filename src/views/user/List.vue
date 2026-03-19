@@ -120,6 +120,24 @@
             <el-option label="管理员" :value="4" />
           </el-select>
         </el-form-item>
+        <el-form-item label="角色">
+          <el-select
+              v-model="form.roleIds"
+              placeholder="请选择角色"
+              multiple
+              filterable              style="width: 100%"
+          >
+            <el-option
+                v-for="role in roleList"
+                :key="role.roleId"
+                :label="role.roleName"
+                :value="role.roleId"
+            >
+              <span style="float: left">{{ role.roleName }}</span>
+              <span style="float: right; color: #8492a6; font-size: 13px">{{ role.roleCode }}</span>
+            </el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item v-if="!form.id" label="密码">
           <el-input v-model="form.password" type="password" show-password />
         </el-form-item>
@@ -138,7 +156,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { userApi } from '@/api/modules/user'
 import { deptApi } from '@/api/modules/dept'
-
+import request from '@/api/index'
 const router = useRouter()
 
 const loading = ref(false)
@@ -160,6 +178,7 @@ const pagination = reactive({
 const dialogVisible = ref(false)
 const currentUser = ref(null)
 const deptList = ref([])
+const roleList = ref([])
 const form = reactive({
   id: null,
   username: '',
@@ -167,7 +186,8 @@ const form = reactive({
   realName: '',
   department: '',
   deptId: null,
-  level: 1
+  level: 1,
+  roleIds: []
 })
 
 const filteredList = computed(() => {
@@ -189,6 +209,21 @@ const fetchDeptList = async () => {
     }
   } catch (error) {
     console.error('获取部门列表失败:', error)
+  }
+}
+
+const fetchRoleList = async () => {
+  try {
+    const res = await request({
+      url: '/api/role/list',
+      method: 'get'
+    })
+    if (res.data) {
+      roleList.value = res.data
+      console.log('角色列表数据:', roleList.value) // 调试日志
+    }
+  } catch (error) {
+    console.error('获取角色列表失败:', error)
   }
 }
 
@@ -260,13 +295,21 @@ const handleCreate = () => {
     realName: '',
     department: '',
     deptId: null,
-    level: 1
+    level: 1,
+    roleIds: []
   })
   dialogVisible.value = true
 }
 
 const handleEdit = (row) => {
   currentUser.value = row
+  console.log('编辑用户数据:', row) // 调试日志
+  console.log('用户角色 IDs:', row.roleIds) // 调试日志
+  console.log('用户角色 Names:', row.roles) // 调试日志
+
+  // 确保 roleIds 是有效的数组
+  const validRoleIds = Array.isArray(row.roleIds) ? row.roleIds : []
+
   Object.assign(form, {
     id: row.id,
     username: row.username,
@@ -274,10 +317,12 @@ const handleEdit = (row) => {
     department: row.department,
     deptId: row.deptId,
     level: row.level,
-    password: ''
+    password: '',
+    roleIds: validRoleIds
   })
   dialogVisible.value = true
 }
+
 
 const handleView = (row) => {
   router.push(`/user/detail/${row.id}`)
@@ -302,6 +347,7 @@ const handleSave = async () => {
 onMounted(() => {
   fetchDeptList()
   fetchList()
+  fetchRoleList()
 })
 </script>
 

@@ -18,22 +18,37 @@
     <div class="header-right">
       <el-dropdown @command="handleCommand">
         <span class="user-info">
-          <el-avatar
-              :size="32"
-              :src="currentAvatarUrl"
-              fit="cover"
-              @error="handleAvatarError"
+          <el-badge
+              :value="unreadMessageCount"
+              :hidden="unreadMessageCount === 0"
+              :max="99"
+              type="danger"            style="margin-right: 8px"
           >
-            <span v-if="showAvatarText" class="avatar-text">
-              {{ avatarText }}
-            </span>
-          </el-avatar>
+            <el-avatar
+                :size="32"
+                :src="currentAvatarUrl"
+                fit="cover"
+                @error="handleAvatarError"
+            >
+              <span v-if="showAvatarText" class="avatar-text">
+                {{ avatarText }}
+              </span>
+            </el-avatar>
+          </el-badge>
           <span class="username">{{ userInfo?.realName || userInfo?.username }}</span>
           <el-icon><ArrowDown /></el-icon>
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+            <el-dropdown-item command="message">
+              <span>消息中心</span>
+              <el-badge
+                  v-if="unreadMessageCount > 0"
+                  :value="unreadMessageCount"
+                  :max="99"
+                  type="danger"                style="margin-left: 8px"
+              />
+            </el-dropdown-item>
             <el-dropdown-item command="settings">系统设置</el-dropdown-item>
             <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
           </el-dropdown-menu>
@@ -43,13 +58,15 @@
   </div>
 </template>
 
-<script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+
+
+<script setup>import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { Fold, Expand, ArrowDown } from '@element-plus/icons-vue'
 import { useAppStore } from '@/stores/modules/app'
 import { useUserStore } from '@/stores/modules/user'
+import { messageApi } from '@/api/modules/message'
 
 const route = useRoute()
 const router = useRouter()
@@ -58,6 +75,9 @@ const userStore = useUserStore()
 
 const isCollapse = computed(() => appStore.sidebarCollapse)
 const userInfo = computed(() => userStore.userInfo)
+
+// 未读消息数量
+const unreadMessageCount = ref(0)
 
 // 当前头像 URL
 const currentAvatarUrl = ref('')
@@ -74,9 +94,29 @@ const testImageUrl = (url) => {
   })
 }
 
+// 获取未读消息数量
+const fetchUnreadMessageCount = async () => {
+  try {
+    const res = await messageApi.getMessageStats()
+    if (res.data) {
+      unreadMessageCount.value = res.data.unreadCount || 0
+    }
+  } catch (error) {
+    console.error('获取未读消息数量失败:', error)
+  }
+}
+
 // 监听用户信息变化
 watch(() => userStore.userInfo, async (newUserInfo) => {
   console.log('=== 监听到用户信息变化 ===', newUserInfo)
+
+  // 从用户信息中获取未读消息数
+  if (newUserInfo?.unreadMessageCount !== undefined) {
+    unreadMessageCount.value = newUserInfo.unreadMessageCount
+  } else {
+    // 如果没有，则调用接口获取
+    await fetchUnreadMessageCount()
+  }
 
   if (newUserInfo?.avatar && typeof newUserInfo.avatar === 'string' && newUserInfo.avatar.trim() !== '') {
     if (newUserInfo.avatar.startsWith('http://') || newUserInfo.avatar.startsWith('https://')) {
@@ -134,8 +174,15 @@ const breadcrumbs = computed(() => {
 const handleCommand = async (command) => {
   switch (command) {
     case 'profile':
+      // TODO: 跳转到个人中心页面
+      ElMessage.info('个人中心页面开发中')
+      break
+    case 'message':
+      router.push('/message')
       break
     case 'settings':
+      // TODO: 跳转到系统设置页面
+      ElMessage.info('系统设置页面开发中')
       break
     case 'logout':
       try {
@@ -153,6 +200,14 @@ const handleCommand = async (command) => {
   }
 }
 
+// 定时刷新未读消息数（每 30 秒）
+let refreshTimer = null
+const startRefreshTimer = () => {
+  refreshTimer = setInterval(() => {
+    fetchUnreadMessageCount()
+  }, 30000) // 30 秒
+}
+
 // 组件挂载时获取用户信息（刷新页面时会触发）
 onMounted(async () => {
   console.log('=== Header 组件 onMounted ===')
@@ -167,6 +222,17 @@ onMounted(async () => {
     } catch (error) {
       console.error('Header 组件：获取用户信息失败:', error)
     }
+  }
+
+  // 启动定时刷新
+  startRefreshTimer()
+})
+
+// 组件卸载时清除定时器
+import { onBeforeUnmount } from 'vue'
+onBeforeUnmount(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
   }
 })
 </script>

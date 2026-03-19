@@ -141,6 +141,17 @@ const routes = [
         }
       },
       {
+        path: 'message',
+        name: 'MessageCenter',
+        component: () => import('@/views/message/Index.vue'),
+        meta: {
+          title: '消息中心',
+          requiresAuth: true,
+          icon: 'Bell',
+          hidden: true
+        }
+      },
+      {
         path: 'push',
         name: 'Push',
         redirect: '/push/config',

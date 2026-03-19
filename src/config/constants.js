@@ -70,10 +70,10 @@ export const USER_ROLES = {
 // 权限标识
 export const PERMISSIONS = {
   // 项目相关
-  PROJECT_CREATE: 'project:create',
-  PROJECT_EDIT: 'project:edit',
-  PROJECT_DELETE: 'project:delete',
-  PROJECT_VIEW: 'project:view',
+  PROJECT_CREATE: 'projectPo:add',
+  PROJECT_EDIT: 'projectPo:edit',
+  PROJECT_DELETE: 'projectPo:delete',
+  PROJECT_VIEW: 'projectPo:query',
 
   // 推送相关
   PUSH_CONFIG: 'push:config',
