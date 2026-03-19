@@ -49,7 +49,6 @@
                   type="danger"                style="margin-left: 8px"
               />
             </el-dropdown-item>
-            <el-dropdown-item command="settings">系统设置</el-dropdown-item>
             <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
           </el-dropdown-menu>
         </template>

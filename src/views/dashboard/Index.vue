@@ -141,6 +141,9 @@ const FolderIcon = Folder
 const CheckIcon = Check
 const CloseIcon = Close
 const UploadIcon = Upload
+const statusData = ref(null)
+const pushStatusData = ref(null)
+
 
 const projectStore = useProjectStore()
 const pushStore = usePushStore()
@@ -209,47 +212,61 @@ const updateCharts = () => {
 }
 
 // 更新项目状态分布图表
-const updateStatusChart = () => {
+const updateStatusChart = async () => {
   if (statusChart) {
-    statusChart.setOption({
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        orient: 'vertical',
-        left: 'left'
-      },
-      series: [
-        {
-          name: '项目状态',
-          type: 'pie',
-          radius: ['40%', '70%'],
-          avoidLabelOverlap: false,
-          itemStyle: {
-            borderRadius: 10,
-            borderColor: '#fff',
-            borderWidth: 2
-          },
-          label: {
-            show: false,
-            position: 'center'
-          },
-          emphasis: {
+    try {
+      // 如果没有数据，则调用接口获取
+      if (!statusData.value) {
+        const res = await dashboardApi.getProjectStatusDistribution({
+          startDate: filterForm.value.startDate,
+          endDate: filterForm.value.endDate
+        })
+        statusData.value = res.data
+      }
+
+      const statuses = statusData.value.statuses || []
+      const counts = statusData.value.counts || []
+
+      statusChart.setOption({
+        tooltip: {
+          trigger: 'item'
+        },
+        legend: {
+          orient: 'vertical',
+          left: 'left'
+        },
+        series: [
+          {
+            name: '项目状态',
+            type: 'pie',
+            radius: ['40%', '70%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+              borderRadius: 10,
+              borderColor: '#fff',
+              borderWidth: 2
+            },
             label: {
-              show: true,
-              fontSize: '20',
-              fontWeight: 'bold'
-            }
-          },
-          data: [
-            { value: 10, name: '需求发起' },
-            { value: 20, name: '开发实施' },
-            { value: 15, name: '部署推进' },
-            { value: 30, name: '交付完成' }
-          ]
-        }
-      ]
-    })
+              show: false,
+              position: 'center'
+            },
+            emphasis: {
+              label: {
+                show: true,
+                fontSize: '20',
+                fontWeight: 'bold'
+              }
+            },
+            data: statuses.map((status, index) => ({
+              value: counts[index],
+              name: status
+            }))
+          }
+        ]
+      })
+    } catch (error) {
+      console.error('Fetch status distribution error:', error)
+    }
   }
 }
 
@@ -304,46 +321,61 @@ const updateTaskOnTimeRateChart = () => {
 }
 
 // 更新推送成功率图表
-const updatePushSuccessChart = () => {
+const updatePushSuccessChart = async () => {
   if (pushSuccessChart) {
-    pushSuccessChart.setOption({
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        bottom: '5%',
-        left: 'center'
-      },
-      series: [
-        {
-          name: '推送状态',
-          type: 'pie',
-          radius: ['40%', '70%'],
-          avoidLabelOverlap: false,
-          itemStyle: {
-            borderRadius: 10,
-            borderColor: '#fff',
-            borderWidth: 2
-          },
-          label: {
-            show: false,
-            position: 'center'
-          },
-          emphasis: {
+    try {
+      // 如果没有数据，则调用接口获取
+      if (!pushStatusData.value) {
+        const res = await dashboardApi.getPushStatusDistribution({
+          startDate: filterForm.value.startDate,
+          endDate: filterForm.value.endDate
+        })
+        pushStatusData.value = res.data
+      }
+
+      const statuses = pushStatusData.value.statuses || []
+      const counts = pushStatusData.value.counts || []
+
+      pushSuccessChart.setOption({
+        tooltip: {
+          trigger: 'item'
+        },
+        legend: {
+          bottom: '5%',
+          left: 'center'
+        },
+        series: [
+          {
+            name: '推送状态',
+            type: 'pie',
+            radius: ['40%', '70%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+              borderRadius: 10,
+              borderColor: '#fff',
+              borderWidth: 2
+            },
             label: {
-              show: true,
-              fontSize: '20',
-              fontWeight: 'bold'
-            }
-          },
-          data: [
-            { value: 85, name: '成功' },
-            { value: 10, name: '失败' },
-            { value: 5, name: '待推送' }
-          ]
-        }
-      ]
-    })
+              show: false,
+              position: 'center'
+            },
+            emphasis: {
+              label: {
+                show: true,
+                fontSize: '20',
+                fontWeight: 'bold'
+              }
+            },
+            data: statuses.map((status, index) => ({
+              value: counts[index],
+              name: status
+            }))
+          }
+        ]
+      })
+    } catch (error) {
+      console.error('Fetch push status distribution error:', error)
+    }
   }
 }
 
@@ -407,9 +439,17 @@ const fetchRanking = async () => {
 
 // 获取所有数据
 const fetchData = async () => {
+  // 重置数据，以便重新获取
+  statusData.value = null
+  pushStatusData.value = null
+
   await fetchStatistics()
   await fetchTaskOnTimeRate()
   await fetchRanking()
+
+  // 更新图表数据
+  await updateStatusChart()
+  await updatePushSuccessChart()
 }
 
 // 窗口大小改变时重新调整图表

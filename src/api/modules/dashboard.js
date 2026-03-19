@@ -71,6 +71,25 @@ export const dashboardApi = {
       method: 'get',
       params
     })
+  },
+
+  // 获取项目状态分布
+  getProjectStatusDistribution(params) {
+    return request({
+      url: '/api/dashboard/project-status-distribution',
+      method: 'get',
+      params
+    })
+  },
+
+  // 获取推送状态分布
+  getPushStatusDistribution(params) {
+    return request({
+      url: '/api/dashboard/push-status-distribution',
+      method: 'get',
+      params
+    })
   }
+
 }
 
