@@ -14,7 +14,7 @@ export const PROJECT_STATUS_MAP = {
   DEVELOPMENT: { label: '开发实施', type: 'warning' },
   DEPLOYMENT: { label: '部署推进', type: 'primary' },
   DELIVERED: { label: '交付完成', type: 'success' },
-  DELIVERED_OVERDUE: { label: '交付完成', type: 'success' },
+  DELIVERED_OVERDUE: { label: '超期交付完成', type: 'success' },
   RETURNED: { label: '已退回', type: 'danger' }
 }
 
