@@ -116,6 +116,7 @@ const handleLogin = async () => {
         router.push(redirect)
       } catch (error) {
         console.error('Login error:', error)
+        // 错误信息已经在拦截器中显示，这里不需要再次显示
       } finally {
         loading.value = false
       }

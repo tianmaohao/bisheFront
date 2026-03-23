@@ -24,9 +24,12 @@ export const usePushStore = defineStore('push', {
         async fetchPushConfigByProjectId(projectId) {
             try {
                 const res = await pushApi.getConfigByProjectId(projectId)
-                if (res.data) {
-                    this.pushConfig = res.data
-                }
+                // 重要：无论返回什么，都更新 pushConfig
+                console.log('Store 收到的响应:', res)
+                console.log('Store 收到的 data:', res.data)
+
+                this.pushConfig = res.data || null
+                console.log('Store 推送配置已更新:', this.pushConfig)
                 return res
             } catch (error) {
                 throw error

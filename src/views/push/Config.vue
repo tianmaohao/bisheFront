@@ -305,19 +305,82 @@ const fetchProjectList = async () => {
 
 // 切换项目时加载配置
 const handleProjectChange = async (projectId) => {
+  console.log('=== 切换项目 ===')
+  console.log('选择的 projectId:', projectId)
+
   if (!projectId) {
+    resetForm()
     return
   }
 
   try {
+    console.log('Fetch push config by project id:', projectId)
     await pushStore.fetchPushConfigByProjectId(projectId)
     const config = pushStore.pushConfig
+
+    console.log('Push config from store:', config)
+
     if (config) {
-      Object.assign(form, config)
+      console.log('配置详情:', config)
+      // 映射后端字段到前端表单
+      form.id = config.id
+      form.projectId = config.projectId
+      form.projectName = config.projectName || ''
+      form.pushType = config.protocol || 'MQTT'
+      form.mqttHost = config.mqttHost || ''
+      form.mqttPort = config.mqttPort || 1883
+      form.mqttUsername = config.mqttUsername || ''
+      form.mqttPassword = config.mqttPassword || ''
+      form.mqttTopic = config.mqttTopic || ''
+      form.rabbitmqHost = config.rabbitmqHost || ''
+      form.rabbitmqPort = config.rabbitmqPort || 5672
+      form.rabbitmqVhost = config.rabbitmqVhost || '/'
+      form.rabbitmqUsername = config.rabbitmqUsername || ''
+      form.rabbitmqPassword = config.rabbitmqPassword || ''
+      form.rabbitmqExchange = config.rabbitmqExchange || ''
+      form.rabbitmqRoutingKey = config.rabbitmqRoutingKey || ''
+      form.httpUrl = config.webhookUrl || ''
+      form.autoPush = config.autoPush === 1
+      form.isManualPush = config.scheduledPush === 1 ? 0 : 1
+      form.pushInterval = config.pushInterval || 3600
+      form.targetUnit = config.targetUnit || ''
+
+      ElMessage.info(`已加载项目 (ID: ${projectId}) 的推送配置`)
+    } else {
+      // 重要：后端返回 null 时，清空表单并提示
+      console.log('该项目没有配置，重置表单')
+      resetForm()
+      form.projectId = projectId
+      ElMessage.warning(`项目 (ID: ${projectId}) 暂无推送配置，请进行新增`)
     }
   } catch (error) {
     console.error('Fetch push config error:', error)
+    ElMessage.error('加载配置失败')
   }
+}
+// 重置表单
+const resetForm = () => {
+  form.id = null
+  form.projectId = null
+  form.projectName = ''
+  form.pushType = 'MQTT'
+  form.mqttHost = ''
+  form.mqttPort = 1883
+  form.mqttUsername = ''
+  form.mqttPassword = ''
+  form.mqttTopic = ''
+  form.rabbitmqHost = ''
+  form.rabbitmqPort = 5672
+  form.rabbitmqVhost = '/'
+  form.rabbitmqUsername = ''
+  form.rabbitmqPassword = ''
+  form.rabbitmqExchange = ''
+  form.rabbitmqRoutingKey = ''
+  form.httpUrl = ''
+  form.autoPush = true
+  form.pushInterval = 3600
+  form.isManualPush = 0
+  form.targetUnit = ''
 }
 
 // 保存配置
