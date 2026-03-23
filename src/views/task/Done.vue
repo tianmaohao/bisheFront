@@ -109,8 +109,8 @@
     loading.value = true
     try {
       await taskStore.fetchTaskList({
-        pageNum: pagination.page,
-        pageSize: pagination.size,
+        page: pagination.page,
+        size: pagination.size,
         assigneeId: userStore.userInfo?.id,
         status: 'completed'
       })

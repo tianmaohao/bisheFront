@@ -137,8 +137,8 @@
     loading.value = true
     try {
       await taskStore.fetchTaskList({
-        pageNum: pagination.page,
-        pageSize: pagination.size,
+        page: pagination.page,
+        size: pagination.size,
         assigneeId: userStore.userInfo?.id,
         // 待办：后端 TaskStatusEnum.code = 'pending' / 'in_progress'
         status: 'pending'
