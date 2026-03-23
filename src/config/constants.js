@@ -80,6 +80,14 @@ export const PERMISSIONS = {
   PUSH_MANUAL: 'push:manual',
   PUSH_VIEW: 'push:view',
 
+
+  // 人员管理相关
+  USER_CREATE: 'user:add',
+  USER_EDIT: 'user:edit',
+  USER_DELETE: 'user:delete',
+  USER_VIEW: 'user:query',
+
+
   // 数据查看
   DATA_VIEW: 'data:view',
   DATA_EXPORT: 'data:export'

@@ -5,7 +5,11 @@
       <template #header>
         <div class="card-header">
           <span>人员列表</span>
-          <el-button type="primary" @click="handleCreate">
+          <el-button
+              v-if="canCreate"
+              type="primary"
+              @click="handleCreate"
+          >
             <el-icon><Plus /></el-icon>
             新增人员
           </el-button>
@@ -44,11 +48,10 @@
       </div>
 
       <el-table
-        v-loading="loading"
-        :data="pagedList"
-        stripe
-        border
-        style="width: 100%"
+          v-loading="loading"
+          :data="tableData"
+          stripe
+          border        style="width: 100%"
       >
         <el-table-column prop="username" label="用户名" min-width="120" />
         <el-table-column prop="realName" label="姓名" min-width="120" />
@@ -67,22 +70,43 @@
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleView(row)">详情</el-button>
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button
+                link
+                type="primary"
+                @click="handleView(row)"
+                v-if="canView"
+            >
+              详情
+            </el-button>
+            <el-button
+                link
+                type="primary"
+                @click="handleEdit(row)"
+                v-if="canEdit"
+            >
+              编辑
+            </el-button>
+            <el-button
+                link
+                type="danger"
+                @click="handleDelete(row)"
+                v-if="canDelete"
+            >
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <div class="pagination">
         <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.size"
-          :total="pagination.total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="calcPage"
-          @size-change="calcPage"
+            v-model:current-page="pagination.page"
+            v-model:page-size="pagination.size"
+            :total="pagination.total"
+            :page-sizes="[10, 20, 50]"
+            layout="total, sizes, prev, pager, next, jumper"
+            @current-change="handlePageChange"
+            @size-change="handleSizeChange"
         />
       </div>
     </el-card>
@@ -100,8 +124,7 @@
           <el-select
               v-model="form.deptId"
               placeholder="请选择部门"
-              filterable
-              style="width: 100%"
+              filterable              style="width: 100%"
               @change="handleDeptChange"
           >
             <el-option
@@ -150,6 +173,7 @@
   </div>
 </template>
 
+
 <script setup>import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -157,10 +181,19 @@ import { Plus } from '@element-plus/icons-vue'
 import { userApi } from '@/api/modules/user'
 import { deptApi } from '@/api/modules/dept'
 import request from '@/api/index'
-const router = useRouter()
+import { canCreateUser, canEditUser, canDeleteUser, canViewUser } from '@/utils/permission'
 
+const router = useRouter()
 const loading = ref(false)
 const rawList = ref([])
+const tableData = ref([])  // 直接使用后端返回的数据
+
+
+// 权限检查
+const canCreate = computed(() => canCreateUser())
+const canEdit = computed(() => canEditUser())
+const canDelete = computed(() => canDeleteUser())
+const canView = computed(() => canViewUser())
 
 const searchForm = reactive({
   username: '',
@@ -190,16 +223,16 @@ const form = reactive({
   roleIds: []
 })
 
-const filteredList = computed(() => {
-  // return rawList.value.filter(u => {
-  //   const uOk = !searchForm.username || (u.username || '').includes(searchForm.username)
-  //   const rOk = !searchForm.realName || (u.realName || '').includes(searchForm.realName)
-  //   const dOk = !searchForm.department || (u.department || '').includes(searchForm.department)
-  //   const sOk = searchForm.status == null || u.status === searchForm.status
-  //   return uOk && rOk && dOk && sOk
-  // })、
-  return rawList.value
-})
+// const filteredList = computed(() => {
+//   // return rawList.value.filter(u => {
+//   //   const uOk = !searchForm.username || (u.username || '').includes(searchForm.username)
+//   //   const rOk = !searchForm.realName || (u.realName || '').includes(searchForm.realName)
+//   //   const dOk = !searchForm.department || (u.department || '').includes(searchForm.department)
+//   //   const sOk = searchForm.status == null || u.status === searchForm.status
+//   //   return uOk && rOk && dOk && sOk
+//   // })、
+//   return rawList.value
+// })
 
 const fetchDeptList = async () => {
   try {
@@ -261,14 +294,22 @@ const fetchList = async () => {
       department: searchForm.department,
       status: searchForm.status
     })
-    if (res.data) {
-      rawList.value = res.data.list || []
+
+    console.log('用户列表响应:', res)
+
+    // 后端返回的数据结构是 res.data = {list: [...], total: 14, ...}
+    if (res.data && res.data.list) {
+      tableData.value = res.data.list
       pagination.total = res.data.total || 0
+
+      console.log('表格数据:', tableData.value)
+      console.log('总数:', pagination.total)
     }
   } finally {
     loading.value = false
   }
 }
+
 
 const calcPage = () => {
   pagination.total = filteredList.value.length
@@ -279,6 +320,18 @@ const handleSearch = () => {
   fetchList()
 }
 
+// 处理页码变化
+const handlePageChange = (page) => {
+  pagination.page = page
+  fetchList()
+}
+
+// 处理每页数量变化
+const handleSizeChange = (size) => {
+  pagination.size = size
+  pagination.page = 1  // 重置到第一页
+  fetchList()
+}
 const handleReset = () => {
   searchForm.username = ''
   searchForm.realName = ''
@@ -288,6 +341,10 @@ const handleReset = () => {
 }
 
 const handleCreate = () => {
+  if (!canCreate.value) {
+    ElMessage.error('您没有新增人员的权限')
+    return
+  }
   Object.assign(form, {
     id: null,
     username: '',
@@ -302,6 +359,10 @@ const handleCreate = () => {
 }
 
 const handleEdit = (row) => {
+  if (!canEdit.value) {
+    ElMessage.error('您没有编辑人员信息的权限')
+    return
+  }
   currentUser.value = row
   console.log('编辑用户数据:', row) // 调试日志
   console.log('用户角色 IDs:', row.roleIds) // 调试日志
@@ -325,10 +386,18 @@ const handleEdit = (row) => {
 
 
 const handleView = (row) => {
+  if (!canView.value) {
+    ElMessage.error('您没有查看人员详情的权限')
+    return
+  }
   router.push(`/user/detail/${row.id}`)
 }
 
 const handleDelete = async (row) => {
+  if (!canDelete.value) {
+    ElMessage.error('您没有删除人员的权限')
+    return
+  }
   await ElMessageBox.confirm(`确定删除用户「${row.realName}」？`, '提示', {
     type: 'warning'
   })
@@ -338,6 +407,15 @@ const handleDelete = async (row) => {
 }
 
 const handleSave = async () => {
+  const isEdit = !!form.id
+  if (isEdit && !canEdit.value) {
+    ElMessage.error('您没有编辑人员信息的权限')
+    return
+  }
+  if (!isEdit && !canCreate.value) {
+    ElMessage.error('您没有新增人员的权限')
+    return
+  }
   await userApi.addOrUpdateUser(form)
   ElMessage.success('保存成功')
   dialogVisible.value = false

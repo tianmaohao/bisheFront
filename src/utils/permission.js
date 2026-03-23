@@ -32,3 +32,24 @@ export const canManualPush = () => {
   return hasPermission(PERMISSIONS.PUSH_MANUAL)
 }
 
+
+// 检查是否可以创建用户
+export const canCreateUser = () => {
+  return hasPermission(PERMISSIONS.USER_CREATE)
+}
+
+// 检查是否可以编辑用户
+export const canEditUser = () => {
+  return hasPermission(PERMISSIONS.USER_EDIT)
+}
+
+// 检查是否可以删除用户
+export const canDeleteUser = () => {
+  return hasPermission(PERMISSIONS.USER_DELETE)
+}
+
+// 检查是否可以查看用户
+export const canViewUser = () => {
+  return hasPermission(PERMISSIONS.USER_VIEW)
+}
+
