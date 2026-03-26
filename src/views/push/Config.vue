@@ -212,7 +212,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage,ElMessageBox } from 'element-plus'
 import { usePushStore } from '@/stores/modules/push'
 import { useProjectStore } from '@/stores/modules/project'
 import { canConfigPush } from '@/utils/permission'
@@ -439,11 +439,13 @@ const handleManualPush = async () => {
     })
 
     pushing.value = true
-    await pushStore.manualPush(form.id)
+    // 传递当前选择的项目 ID
+    await pushStore.manualPush(form.projectId)
     ElMessage.success('推送成功')
   } catch (error) {
     if (error !== 'cancel') {
       console.error('Manual push error:', error)
+      ElMessage.error('推送失败：' + (error.message || '未知错误'))
     }
   } finally {
     pushing.value = false

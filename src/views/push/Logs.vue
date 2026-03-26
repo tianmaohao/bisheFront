@@ -99,7 +99,14 @@
             {{ formatDate(row.pushTime) }}
           </template>
         </el-table-column>
-        <el-table-column prop="message" label="推送消息" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="message" label="推送消息" min-width="200" show-overflow-tooltip >
+          <template #default="{ row }">
+            <span v-if="row.pushMessage" style="color: #f56c6c;">
+              {{ row.pushMessage }}
+            </span>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="errorMessage" label="错误信息" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <span v-if="row.errorMessage" style="color: #f56c6c;">
@@ -108,18 +115,7 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="{ row }">
-            <el-button
-                v-if="row.status === 'SUCCESS'"
-                link
-                type="danger"
-                @click="handleCancel(row.id)"
-            >
-              撤销
-            </el-button>
-          </template>
-        </el-table-column>
+
       </el-table>
 
       <!-- 分页 -->

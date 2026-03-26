@@ -67,9 +67,9 @@ export const usePushStore = defineStore('push', {
         },
 
         // 手动推送
-        async manualPush(configId) {
+        async manualPush(projectId) {
             try {
-                const res = await pushApi.manualPush(configId)
+                const res = await pushApi.manualPush(projectId)
                 return res
             } catch (error) {
                 throw error

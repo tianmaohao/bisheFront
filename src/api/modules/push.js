@@ -45,11 +45,11 @@ export const pushApi = {
   },
 
   // 手动推送
-  manualPush(configId) {
+  manualPush(projectId) {
     return request({
       url: '/api/push/manual',
       method: 'post',
-      params: { configId }
+      params: { projectId }
     })
   },
 
