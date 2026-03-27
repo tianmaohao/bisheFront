@@ -61,5 +61,13 @@ export const userApi = {
       method: 'delete',
       params: {userId}
     })
+  },
+  //查询所有项目经理列表
+  getPmList(){
+    return request({
+      url: '/api/user/getPmList',
+      method: 'get'
+    })
   }
+
 }

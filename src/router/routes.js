@@ -172,6 +172,15 @@ const routes = [
             }
           },
           {
+            path: 'data',
+            name: 'PushData',
+            component: () => import('@/views/push/List.vue'),
+            meta: {
+              title: '推送数据',
+              requiresAuth: true
+            }
+          },
+          {
             path: 'logs',
             name: 'PushLogs',
             component: () => import('@/views/push/Logs.vue'),

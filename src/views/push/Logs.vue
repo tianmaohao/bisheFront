@@ -4,10 +4,21 @@
       <template #header>
         <div class="card-header">
           <span>推送日志</span>
-          <el-button type="primary" @click="handleRefresh">
-            <el-icon><Refresh /></el-icon>
-            刷新
-          </el-button>
+          <div>
+            <el-button
+                v-if="canOperate"
+                type="danger"
+                :disabled="selectedLogIds.length === 0"
+                @click="handleBatchDelete"
+            >
+              <el-icon><Delete /></el-icon>
+              批量删除
+            </el-button>
+            <el-button type="primary" @click="handleRefresh">
+              <el-icon><Refresh /></el-icon>
+              刷新
+            </el-button>
+          </div>
         </div>
       </template>
 
@@ -72,9 +83,15 @@
           v-loading="loading"
           :data="logList"
           stripe
-          border
-          style="width: 100%"
+          border          style="width: 100%"
+          @selection-change="handleSelectionChange"
       >
+        <el-table-column type="selection" width="55" />
+        <el-table-column label="序号" width="60" align="center">
+          <template #default="{ $index }">
+            {{ ($index + 1) + (pagination.page - 1) * pagination.size }}
+          </template>
+        </el-table-column>
         <el-table-column prop="projectName" label="项目名称" min-width="150" />
         <el-table-column prop="pushType" label="推送方式" width="120">
           <template #default="{ row }">
@@ -99,9 +116,9 @@
             {{ formatDate(row.pushTime) }}
           </template>
         </el-table-column>
-        <el-table-column prop="message" label="推送消息" min-width="200" show-overflow-tooltip >
+        <el-table-column prop="pushMessage" label="推送消息" min-width="200" show-overflow-tooltip >
           <template #default="{ row }">
-            <span v-if="row.pushMessage" style="color: #f56c6c;">
+            <span v-if="row.pushMessage" style="color: green;">
               {{ row.pushMessage }}
             </span>
             <span v-else>-</span>
@@ -115,7 +132,19 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-
+        <el-table-column label="操作" width="100" fixed="right">
+          <template #default="{ row }">
+            <el-button
+                v-if="canOperate"
+                type="danger"
+                size="small"
+                @click="handleDelete(row.id)"
+            >
+              <el-icon><Delete /></el-icon>
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
 
       <!-- 分页 -->
@@ -134,21 +163,26 @@
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, onMounted } from 'vue'
+
+<script setup>import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { Refresh, Delete } from '@element-plus/icons-vue'
 import { usePushStore } from '@/stores/modules/push'
+import { useUserStore } from '@/stores/modules/user'
 import { useProjectStore } from '@/stores/modules/project'
-import { PUSH_STATUS } from '@/config/constants'
+import {PERMISSIONS, PUSH_STATUS} from '@/config/constants'
 import { formatDate } from '@/utils/date'
+import {hasPermission} from "@/utils/permission.js";
 
 const pushStore = usePushStore()
+const userStore = useUserStore()
 const projectStore = useProjectStore()
 
 const loading = ref(false)
 const logList = ref([])
 const projectList = ref([])
+const selectedLogIds = ref([])
+
 
 const searchForm = reactive({
   projectId: null,
@@ -157,6 +191,16 @@ const searchForm = reactive({
   dateRange: []
 })
 
+// 判断是否为管理员（level === 4）
+const isAdmin = computed(() => {
+  return userStore.userInfo?.level === 4
+})
+const canOperate = computed(() => {
+  return hasPermission(PERMISSIONS.PUSH_CONFIG)
+})
+const handleSelectionChange = (selection) => {
+  selectedLogIds.value = selection.map(item => item.id)
+}
 const pagination = reactive({
   page: 1,
   size: 10,
@@ -255,6 +299,48 @@ const handleCancel = async (logId) => {
   }
 }
 
+const handleDelete = async (logId) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该条推送日志吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+
+    await pushStore.deletePushLog(logId)
+    ElMessage.success('删除成功')
+    fetchLogList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('Delete push log error:', error)
+    }
+  }
+}
+
+const handleBatchDelete = async () => {
+  if (selectedLogIds.value.length === 0) {
+    ElMessage.warning('请选择要删除的日志')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(`确定要删除选中的 ${selectedLogIds.value.length} 条推送日志吗？`, '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+
+    await pushStore.batchDeletePushLog(selectedLogIds.value)
+    ElMessage.success('批量删除成功')
+    selectedLogIds.value = []
+    fetchLogList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('Batch delete push logs error:', error)
+    }
+  }
+}
+
 const handleSizeChange = () => {
   fetchLogList()
 }
@@ -269,12 +355,16 @@ onMounted(() => {
 })
 </script>
 
-<style lang="less" scoped>
-.push-logs {
+<style lang="less" scoped>.push-logs {
   .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    > div {
+      display: flex;
+      gap: 10px;
+    }
   }
 
   .search-bar {

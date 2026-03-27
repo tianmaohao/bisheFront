@@ -44,6 +44,23 @@ export const pushApi = {
     })
   },
 
+  // 删除推送日志
+  deletePushLog(logId) {
+    return request({
+      url: `/api/push/log/${logId}`,
+      method: 'delete'
+    })
+  },
+
+  // 批量删除推送日志
+  batchDeletePushLog(logIds) {
+    return request({
+      url: '/api/push/log/batch',
+      method: 'delete',
+      data: logIds
+    })
+  },
+
   // 手动推送
   manualPush(projectId) {
     return request({
@@ -68,6 +85,31 @@ export const pushApi = {
       url: '/api/push/auto/stop',
       method: 'post',
       params: { configId }
+    })
+  },
+  // 获取推送数据列表
+  getDataList(params) {
+    return request({
+      url: '/api/push/data/list',
+      method: 'post',
+      data: params
+    })
+  },
+
+  // 删除推送数据
+  deletePushData(id) {
+    return request({
+      url: `/api/push/data/${id}`,
+      method: 'delete'
+    })
+  },
+
+  // 批量删除推送数据
+  batchDeletePushData(ids) {
+    return request({
+      url: '/api/push/data/batch',
+      method: 'delete',
+      data: ids
     })
   }
 }

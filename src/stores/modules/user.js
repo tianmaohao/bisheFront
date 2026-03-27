@@ -111,6 +111,15 @@ export const useUserStore = defineStore('user', {
       } catch (error) {
         throw error
       }
+    },
+    //获取所有项目经理列表
+    async fetchPmList() {
+      try {
+        const res = await userApi.getPmList()
+        return res
+      } catch (error) {
+        throw error
+      }
     }
   }
 })

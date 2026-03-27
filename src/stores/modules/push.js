@@ -65,6 +65,25 @@ export const usePushStore = defineStore('push', {
                 throw error
             }
         },
+        // 删除推送日志
+        async deletePushLog(logId) {
+            try {
+                const res = await pushApi.deletePushLog(logId)
+                return res
+            } catch (error) {
+                throw error
+            }
+        },
+
+        // 批量删除推送日志
+        async batchDeletePushLog(logIds) {
+            try {
+                const res = await pushApi.batchDeletePushLog(logIds)
+                return res
+            } catch (error) {
+                throw error
+            }
+        },
 
         // 手动推送
         async manualPush(projectId) {
@@ -90,6 +109,35 @@ export const usePushStore = defineStore('push', {
         async stopAutoPush(configId) {
             try {
                 const res = await pushApi.stopAutoPush(configId)
+                return res
+            } catch (error) {
+                throw error
+            }
+        },
+        // 获取推送数据列表
+        async fetchPushDataList(params) {
+            try {
+                const res = await pushApi.getDataList(params)
+                return res
+            } catch (error) {
+                throw error
+            }
+        },
+
+        // 删除推送数据
+        async deletePushData(id) {
+            try {
+                const res = await pushApi.deletePushData(id)
+                return res
+            } catch (error) {
+                throw error
+            }
+        },
+
+        // 批量删除推送数据
+        async batchDeletePushData(ids) {
+            try {
+                const res = await pushApi.batchDeletePushData(ids)
                 return res
             } catch (error) {
                 throw error
