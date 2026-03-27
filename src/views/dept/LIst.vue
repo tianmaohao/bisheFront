@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>部门列表</span>
-          <el-button type="primary" @click="handleCreate">
+          <el-button v-if="canAdd" type="primary" @click="handleCreate">
             <el-icon><Plus /></el-icon>
             新增部门
           </el-button>
@@ -56,10 +56,10 @@
         <el-table-column prop="updateTime" label="更新时间" width="180" align="center" />
         <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handleEdit(row)">
+            <el-button v-if="canEdit" link type="primary" size="small" @click="handleEdit(row)">
               编辑
             </el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">
+            <el-button v-if="canDelete" link type="danger" size="small" @click="handleDelete(row)">
               删除
             </el-button>
           </template>
@@ -100,6 +100,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Folder, Document, CaretRight, CaretBottom } from '@element-plus/icons-vue'
 import { deptApi } from '@/api/modules/dept'
+import {hasPermission} from "@/utils/permission.js";
+import {PERMISSIONS} from "@/config/constants.js";
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -116,6 +118,18 @@ const form = reactive({
   deptId: null,
   deptName: '',
   parentId: 0
+})
+
+
+const canEdit = computed(() => {
+  return hasPermission(PERMISSIONS.USER_EDIT)
+})
+
+const canDelete = computed(() => {
+  return hasPermission(PERMISSIONS.USER_DELETE)
+})
+const canAdd = computed(() => {
+  return hasPermission(PERMISSIONS.USER_CREATE)
 })
 
 // 表单验证规则

@@ -1,12 +1,13 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import {ref, reactive, onMounted, computed} from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { useProjectStore } from '@/stores/modules/project'
-import { PROJECT_STATUS_MAP } from '@/config/constants'
+import {PERMISSIONS, PROJECT_STATUS_MAP} from '@/config/constants'
 import { formatDateOnly } from '@/utils/date'
 import ProjectFormDialog from './components/ProjectFormDialog.vue'
+import {hasPermission} from "@/utils/permission.js";
 
 const router = useRouter()
 const projectStore = useProjectStore()
@@ -97,6 +98,17 @@ const handleView = (id) => {
   router.push(`/project/detail/${id}`)
 }
 
+const canEdit = computed(() => {
+  return hasPermission(PERMISSIONS.PROJECT_EDIT)
+})
+
+const canDelete = computed(() => {
+  return hasPermission(PERMISSIONS.PROJECT_DELETE)
+})
+const canAdd = computed(() => {
+  return hasPermission(PERMISSIONS.PROJECT_CREATE)
+})
+
 const handleEdit = (id) => {
   currentProjectId.value = id
   dialogVisible.value = true
@@ -145,7 +157,7 @@ onMounted(() => {
       <template #header>
         <div class="card-header">
           <span>项目列表</span>
-          <el-button type="primary" @click="handleCreate">
+          <el-button v-if="canAdd" type="primary" @click="handleCreate">
             <el-icon><Plus /></el-icon>
             新建项目
           </el-button>
@@ -233,12 +245,12 @@ onMounted(() => {
             <el-button link type="primary" @click="handleView(row.id)">
               查看
             </el-button>
-            <el-button link type="primary" @click="handleEdit(row.id)">
+            <el-button v-if="canEdit" link type="primary" @click="handleEdit(row.id) ">
               编辑
             </el-button>
-            <el-button link type="danger" @click="handleDelete(row.id)">
+            <el-buttonv v-if="canDelete" link type="danger" @click="handleDelete(row.id)">
               删除
-            </el-button>
+            </el-buttonv>
           </template>
         </el-table-column>
       </el-table>

@@ -20,7 +20,7 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="loadData" :loading="loading">查询</el-button>
-          <el-button @click="handleExport">导出</el-button>
+          <el-button v-if="canExport" @click="handleExport">导出</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -67,6 +67,8 @@ import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import { taskApi } from '@/api/modules/task'
+import {PERMISSIONS} from "@/config/constants.js";
+import {hasPermission} from "@/utils/permission.js";
 
 const filterForm = reactive({
   dateRange: [],
@@ -87,6 +89,10 @@ const dimensionLabel = computed(() => {
     case 'dept': return '部门'
     default: return '维度'
   }
+})
+
+const canExport = computed(() => {
+  return hasPermission(PERMISSIONS.DATA_EXPORT)
 })
 
 const initCharts = () => {
