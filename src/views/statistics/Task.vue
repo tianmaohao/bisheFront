@@ -177,17 +177,34 @@ const loadData = async () => {
 }
 
 const handleExport = () => {
-  const header = ['名称', '总任务数', '按时完成数', '按时完成率']
-  const rows = tableData.value.map(i => [i.name, i.totalTasks, i.onTimeTasks, `${i.onTimeRate}%`])
-  const csv = [header, ...rows].map(r => r.join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `任务按时完成率统计_${filterForm.dimension}.csv`
-  link.click()
-  URL.revokeObjectURL(url)
-  ElMessage.success('导出成功')
+  import('xlsx').then(({ utils, writeFile }) => {
+    // 准备数据
+    const data = [
+      ['名称', '总任务数', '按时完成数', '按时完成率'],
+      ...tableData.value.map(i => [i.name, i.totalTasks, i.onTimeTasks, `${i.onTimeRate}%`])
+    ]
+
+    // 创建工作表
+    const ws = utils.aoa_to_sheet(data)
+
+    // 设置列宽
+    ws['!cols'] = [
+      { wch: 20 }, // 名称列宽
+      { wch: 15 }, // 总任务数列宽
+      { wch: 15 }, // 按时完成数列宽
+      { wch: 15 }  // 按时完成率列宽
+    ]
+
+    // 创建工作簿
+    const wb = utils.book_new()
+    utils.book_append_sheet(wb, ws, '任务统计')
+
+    // 导出文件
+    writeFile(wb, `任务按时完成率统计_${filterForm.dimension}.xlsx`)
+    ElMessage.success('导出成功')
+  }).catch(() => {
+    ElMessage.error('导出失败')
+  })
 }
 
 const handleResize = () => {
