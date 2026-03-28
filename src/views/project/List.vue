@@ -206,6 +206,7 @@ onMounted(() => {
       >
         <el-table-column prop="name" label="项目名称" min-width="150" />
         <el-table-column prop="customer" label="合作客户" min-width="120" />
+        <el-table-column prop="pmName" label="项目经理" min-width="120" />
         <el-table-column prop="status" label="项目状态" width="120">
           <template #default="{ row }">
             <el-tag :type="PROJECT_STATUS_MAP[row.status]?.type">
@@ -248,9 +249,9 @@ onMounted(() => {
             <el-button v-if="canEdit" link type="primary" @click="handleEdit(row.id) ">
               编辑
             </el-button>
-            <el-buttonv v-if="canDelete" link type="danger" @click="handleDelete(row.id)">
+            <el-button v-if="canDelete" link type="danger" @click="handleDelete(row.id)">
               删除
-            </el-buttonv>
+            </el-button>
           </template>
         </el-table-column>
       </el-table>

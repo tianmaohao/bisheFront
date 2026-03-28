@@ -23,6 +23,9 @@
           <el-descriptions-item label="合作客户">
             {{ project.customer }}
           </el-descriptions-item>
+          <el-descriptions-item label="项目经理">
+            {{ getPmName(project.pmId) }}
+          </el-descriptions-item>
           <el-descriptions-item label="项目状态">
             <el-tag :type="PROJECT_STATUS_MAP[project.status]?.type">
               {{ PROJECT_STATUS_MAP[project.status]?.label }}
@@ -293,6 +296,7 @@ const project = ref(null)
 const nodes = ref([])
 const tasks = ref([])
 const logs = ref([])
+const pmList = ref([])
 
 // 节点相关
 const nodeDialogVisible = ref(false)
@@ -346,6 +350,41 @@ const remoteSearchUser = async (queryString) => {
     console.error('Search user error:', error)
   } finally {
     userSearchLoading.value = false
+  }
+}
+
+// 获取项目经理姓名
+const getPmName = (pmId) => {
+  if (!pmId) return '未分配'
+  const pm = pmList.value.find(pm => pm.id === pmId)
+  return pm ? `${pm.realName} (${pm.username})` : '未分配'
+}
+
+
+// 获取所有项目经理列表
+const fetchPmList = async () => {
+  try {
+    const res = await userStore.fetchPmList()
+    pmList.value = res.data || []
+  } catch (error) {
+    console.error('Fetch pm list error:', error)
+  }
+}
+
+// 处理项目经理变更
+const handlePmChange = async (pmId) => {
+  if (!project.value?.id) return
+
+  try {
+    await projectStore.updateProject(project.value.id, {
+      ...project.value,
+      pmId: pmId || null
+    })
+    ElMessage.success('项目经理更新成功')
+  } catch (error) {
+    console.error('Update pm error:', error)
+    // 恢复原值
+    await fetchProjectDetail()
   }
 }
 
@@ -594,6 +633,7 @@ const operationTypeText = (type) => {
 }
 
 onMounted(() => {
+  fetchPmList()
   fetchUserList()
   fetchProjectDetail()
 })

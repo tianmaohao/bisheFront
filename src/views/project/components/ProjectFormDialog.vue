@@ -17,6 +17,22 @@
       <el-form-item label="合作客户" prop="customer">
         <el-input v-model="form.customer" placeholder="请输入合作客户" />
       </el-form-item>
+      <el-form-item label="项目经理" prop="pmId">
+        <el-select
+            v-model="form.pmId"
+            placeholder="请选择项目经理"
+            filterable
+            clearable
+            style="width: 100%"
+        >
+          <el-option
+              v-for="pm in pmList"
+              :key="pm.id"
+              :label="`${pm.realName} (${pm.username})`"
+              :value="Number(pm.id)"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="开始日期" prop="startDate">
         <el-date-picker
           v-model="form.startDate"
@@ -55,6 +71,7 @@
 <script setup>import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useProjectStore } from '@/stores/modules/project'
+import { useUserStore } from '@/stores/modules/user'
 import { validators } from '@/utils/validator'
 
 const props = defineProps({
@@ -73,6 +90,8 @@ const emit = defineEmits(['update:modelValue', 'success'])
 const projectStore = useProjectStore()
 const formRef = ref(null)
 const loading = ref(false)
+const userStore = useUserStore()
+const pmList = ref([])
 
 const dialogVisible = computed({
   get: () => props.modelValue,
@@ -84,7 +103,8 @@ const form = reactive({
   customer: '',
   startDate: '',
   deadline: '',
-  description: ''
+  description: '',
+  pmId: null
 })
 
 const rules = {
@@ -103,7 +123,15 @@ const formatDate = (date) => {
   const day = String(d.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
-
+// 获取所有项目经理列表
+const fetchPmList = async () => {
+  try {
+    const res = await userStore.fetchPmList()
+    pmList.value = res.data || []
+  } catch (error) {
+    console.error('Fetch pm list error:', error)
+  }
+}
 // 获取项目详情
 const fetchProjectDetail = async () => {
   if (!props.projectId) return
@@ -117,7 +145,8 @@ const fetchProjectDetail = async () => {
         customer: project.customer || '',
         startDate: project.startDate || '',
         deadline: project.deadline || '',
-        description: project.description || ''
+        description: project.description || '',
+        pmId: project.pmId || null
       })
     }
   } catch (error) {
@@ -137,6 +166,7 @@ watch(() => props.projectId, (newVal) => {
 // 监听对话框显示
 watch(() => props.modelValue, (newVal) => {
   if (newVal) {
+    fetchPmList()
     if (props.projectId) {
       fetchProjectDetail()
     } else {
@@ -151,7 +181,8 @@ const resetForm = () => {
     customer: '',
     startDate: '',
     deadline: '',
-    description: ''
+    description: '',
+    pmId: null
   })
   formRef.value?.clearValidate()
 }

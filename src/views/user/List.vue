@@ -57,6 +57,7 @@
         <el-table-column prop="realName" label="姓名" min-width="120" />
         <el-table-column prop="department" label="所属部门" min-width="140" />
         <el-table-column prop="roles" label="角色" min-width="120" />
+        <el-table-column prop="roleId" label="角色 ID" width="100" v-if="false" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'info'">
@@ -134,10 +135,11 @@
 
         <el-form-item label="角色">
           <el-select
-              v-model="form.roleIds"
+              v-model="form.roleId"
               placeholder="请选择角色"
-              multiple
               filterable              style="width: 100%"
+              @change="handleRoleChange"
+
           >
             <el-option
                 v-for="role in roleList"
@@ -146,8 +148,7 @@
                 :value="role.roleId"
             >
               <span style="float: left">{{ role.roleName }}</span>
-              <span style="float: right; color: #8492a6; font-size: 13px">{{ role.roleCode }}</span>
-            </el-option>
+              <span style="float: right; color: #8492a6; font-size: 13px">{{ role.roleCode }}</span>            </el-option>
           </el-select>
         </el-form-item>
         <el-form-item v-if="!form.id" label="密码">
@@ -209,7 +210,7 @@ const form = reactive({
   department: '',
   deptId: null,
   level: 1,
-  roleIds: []
+  roleId: null
 })
 
 // const filteredList = computed(() => {
@@ -253,6 +254,13 @@ const handleDeptChange = (deptId) => {
   const selectedDept = deptList.value.find(dept => dept.deptId === deptId)
   if (selectedDept) {
     form.department = selectedDept.deptName
+  }
+}
+
+const handleRoleChange = (roleId) => {
+  const selectedRole = roleList.value.find(role => role.roleId === roleId)
+  if (selectedRole) {
+    form.roleId = roleId
   }
 }
 
@@ -342,7 +350,7 @@ const handleCreate = () => {
     department: '',
     deptId: null,
     level: 1,
-    roleIds: []
+    roleId: null
   })
   dialogVisible.value = true
 }
@@ -354,11 +362,8 @@ const handleEdit = (row) => {
   }
   currentUser.value = row
   console.log('编辑用户数据:', row) // 调试日志
-  console.log('用户角色 IDs:', row.roleIds) // 调试日志
-  console.log('用户角色 Names:', row.roles) // 调试日志
-
-  // 确保 roleIds 是有效的数组
-  const validRoleIds = Array.isArray(row.roleIds) ? row.roleIds : []
+  console.log('用户角色 ID:', row.roleId) // 调试日志
+  console.log('用户角色 Name:', row.roles) // 调试日志
 
   Object.assign(form, {
     id: row.id,
@@ -368,8 +373,14 @@ const handleEdit = (row) => {
     deptId: row.deptId,
     level: row.level,
     password: '',
-    roleIds: validRoleIds
+    roleId: row.roleId
   })
+
+  // 确保角色能正确回显
+  if (row.roleId) {
+    form.roleId = row.roleId
+  }
+
   dialogVisible.value = true
 }
 
