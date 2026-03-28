@@ -56,11 +56,7 @@
         <el-table-column prop="username" label="用户名" min-width="120" />
         <el-table-column prop="realName" label="姓名" min-width="120" />
         <el-table-column prop="department" label="所属部门" min-width="140" />
-        <el-table-column prop="level" label="等级" width="100">
-          <template #default="{ row }">
-            <el-tag>{{ levelText(row.level) }}</el-tag>
-          </template>
-        </el-table-column>
+        <el-table-column prop="roles" label="角色" min-width="120" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'info'">
@@ -135,14 +131,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="等级">
-          <el-select v-model="form.level" placeholder="请选择">
-            <el-option label="普通员工" :value="1" />
-            <el-option label="主管" :value="2" />
-            <el-option label="项目经理" :value="3" />
-            <el-option label="管理员" :value="4" />
-          </el-select>
-        </el-form-item>
+
         <el-form-item label="角色">
           <el-select
               v-model="form.roleIds"
