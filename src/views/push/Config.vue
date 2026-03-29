@@ -129,22 +129,22 @@
           </div>
         </el-form-item>
 
-        <el-form-item
-            v-if="form.isManualPush === 0"
-            label="推送间隔"
-            prop="pushInterval"
-        >
-          <el-input-number
-              v-model="form.pushInterval"
-              :min="1"
-              :max="86400"
-              placeholder="请输入推送间隔（秒）"
-          />
-          <span style="margin-left: 10px; color: #909399;">秒</span>
-          <div class="form-tip">
-            自动推送的时间间隔，最小 1 秒，最大 86400 秒（24 小时）
-          </div>
-        </el-form-item>
+<!--        <el-form-item-->
+<!--            v-if="form.isManualPush === 0"-->
+<!--            label="推送间隔"-->
+<!--            prop="pushInterval"-->
+<!--        >-->
+<!--          <el-input-number-->
+<!--              v-model="form.pushInterval"-->
+<!--              :min="1"-->
+<!--              :max="86400"-->
+<!--              placeholder="请输入推送间隔（秒）"-->
+<!--          />-->
+<!--          <span style="margin-left: 10px; color: #909399;">秒</span>-->
+<!--          <div class="form-tip">-->
+<!--            自动推送的时间间隔，最小 1 秒，最大 86400 秒（24 小时）-->
+<!--          </div>-->
+<!--        </el-form-item>-->
 
         <el-form-item
             v-if="form.isManualPush === 0"
@@ -294,8 +294,8 @@ const projectList = ref([])
 const fetchProjectList = async () => {
   try {
     const res = await projectStore.fetchProjectList({
-      pageNum: 1,
-      pageSize: 100
+      page: 1,
+      size: 100
     })
     projectList.value = res.data?.list || []
   } catch (error) {
@@ -412,7 +412,7 @@ const handleSave = async () => {
           autoPush: form.autoPush ? 1 : 0,
           scheduledPush: form.isManualPush === 0 ? 1 : 0,
           pushInterval: form.pushInterval,
-          pushStatus: form.pushStatus || 0,
+          pushStatus: form.pushStatus || 1,
           targetUnit: form.targetUnit
         }
         await pushStore.savePushConfig(submitData)
