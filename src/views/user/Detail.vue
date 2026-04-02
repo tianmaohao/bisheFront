@@ -109,7 +109,7 @@ const form = reactive({
   department: '',
   roleId: null,
   level: 1,
-  status: 1
+  status: null
 })
 const roleList = ref([])
 const deptList = ref([])
@@ -162,7 +162,7 @@ const fetchDetail = async () => {
       form.realName = res.data.realName || ''
       form.department = res.data.department || ''
       form.level = res.data.level || 1
-      form.status = res.data.status || 1
+      form.status = res.data.status
 
       // 角色 ID 回显 - 关键：必须手动设置
       if (res.data.roleId !== undefined && res.data.roleId !== null) {
