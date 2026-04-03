@@ -58,25 +58,6 @@
       <el-col :xs="24" :sm="24" :md="12">
         <el-card>
           <template #header>
-            <span>任务准时完成率</span>
-          </template>
-          <div ref="taskOnTimeRateChartRef" style="height: 300px;"></div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="20" class="charts-row">
-      <el-col :xs="24" :sm="24" :md="12">
-        <el-card>
-          <template #header>
-            <span>推送成功率</span>
-          </template>
-          <div ref="pushSuccessChartRef" style="height: 300px;"></div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="24" :md="12">
-        <el-card>
-          <template #header>
             <div class="chart-header">
               <span>任务排行榜</span>
               <el-select v-model="rankSortBy" size="small" @change="fetchRanking">
@@ -124,6 +105,25 @@
               </el-table-column>
             </el-table>
           </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="20" class="charts-row">
+      <el-col :xs="24" :sm="24" :md="12">
+        <el-card>
+          <template #header>
+            <span>推送数据状态分布</span>
+          </template>
+          <div ref="pushSuccessChartRef" style="height: 300px;"></div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="24" :md="12">
+        <el-card>
+          <template #header>
+            <span>任务准时完成率</span>
+          </template>
+          <div ref="taskOnTimeRateChartRef" style="height: 300px;"></div>
         </el-card>
       </el-col>
     </el-row>
