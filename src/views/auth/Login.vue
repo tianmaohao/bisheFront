@@ -112,8 +112,8 @@ const handleLogin = async () => {
       try {
         await userStore.login(loginForm)
         ElMessage.success('登录成功')
-        const redirect = route.query.redirect || '/'
-        router.push(redirect)
+        // 登录成功后默认跳转到首页
+        router.push('/')
       } catch (error) {
         console.error('Login error:', error)
         // 错误信息已经在拦截器中显示，这里不需要再次显示
