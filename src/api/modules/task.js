@@ -59,6 +59,22 @@ export const taskApi = {
       method: 'post',
       data
     })
+  },
+
+  // 根据用户 ID 获取任务列表
+  getTasksByUserId(userId, params) {
+    return request({
+      url: `/api/task/user/${userId}`,
+      method: 'get',
+      params
+    })
+  },
+
+  getUserTaskStatistics(userId){
+    return request({
+      url: `/api/task/user/${userId}/statistics`,
+      method: 'get'
+    })
   }
 
 }
