@@ -15,7 +15,8 @@ export const userApi = {
   logout() {
     return request({
       url: '/auth/logout',
-      method: 'post'
+      method: 'post',
+      isLogoutRequest: true // 添加自定义标记
     })
   },
 

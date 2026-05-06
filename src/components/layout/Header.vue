@@ -109,6 +109,12 @@ const fetchUnreadMessageCount = async () => {
 watch(() => userStore.userInfo, async (newUserInfo) => {
   console.log('=== 监听到用户信息变化 ===', newUserInfo)
 
+  // 如果用户信息为空（退出登录），不获取消息数量
+  if (!newUserInfo) {
+    unreadMessageCount.value = 0
+    return
+  }
+
   // 从用户信息中获取未读消息数
   if (newUserInfo?.unreadMessageCount !== undefined) {
     unreadMessageCount.value = newUserInfo.unreadMessageCount
@@ -190,6 +196,11 @@ const handleCommand = async (command) => {
           cancelButtonText: '取消',
           type: 'warning'
         })
+        // 先清除定时器，防止退出后定时器继续请求
+        if (refreshTimer) {
+          clearInterval(refreshTimer)
+          refreshTimer = null
+        }
         await userStore.logout()
         router.push('/login')
       } catch (error) {
@@ -198,6 +209,7 @@ const handleCommand = async (command) => {
       break
   }
 }
+
 
 // 定时刷新未读消息数（每 30 秒）
 let refreshTimer = null

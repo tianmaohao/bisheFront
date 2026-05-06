@@ -42,5 +42,21 @@ export const messageApi = {
             url: '/api/message/stats',
             method: 'get'
         })
+    },
+    // 删除单条消息
+    deleteMessage(msgId) {
+        return request({
+            url: `/api/message/${msgId}`,
+            method: 'delete'
+        })
+    },
+
+    // 批量删除消息
+    batchDeleteMessages(msgIds) {
+        return request({
+            url: '/api/message/batch-delete',
+            method: 'delete',
+            data: msgIds
+        })
     }
 }

@@ -1,4 +1,3 @@
-
 <template>
   <div class="message-center" v-loading="loading">
     <el-card>
@@ -6,6 +5,15 @@
         <div class="card-header">
           <span>我的消息</span>
           <div class="header-actions">
+            <el-button
+                type="danger"
+                size="small"
+                @click="handleBatchDelete"
+                :disabled="selectedMessages.length === 0"
+                :icon="Delete"
+            >
+              批量删除 ({{ selectedMessages.length }})
+            </el-button>
             <el-button
                 type="primary"
                 size="small"
@@ -36,7 +44,8 @@
                 <el-badge
                     v-if="unreadCount > 0"
                     :value="unreadCount"
-                    :max="99"                    style="margin-left: 8px"
+                    :max="99"
+                    style="margin-left: 8px"
                 />
               </span>
             </template>
@@ -49,7 +58,8 @@
                     v-if="unreadCount > 0"
                     :value="unreadCount"
                     :max="99"
-                    type="danger"                    style="margin-left: 8px"
+                    type="danger"
+                    style="margin-left: 8px"
                 />
               </span>
             </template>
@@ -64,43 +74,76 @@
       <div class="message-list">
         <el-empty v-if="messageList.length === 0" description="暂无消息" />
 
-        <div
-            v-else
-            v-for="msg in messageList"
-            :key="msg.msgId"
-            class="message-item"
-            :class="{ 'is-unread': msg.readFlag === 0 }"
-            @click="handleViewMessage(msg)"
-        >
-          <div class="message-icon">
-            <el-icon :size="24" :color="getMessageIcon(msg.msgType).color">
-              <component :is="getMessageIcon(msg.msgType).icon" />
-            </el-icon>
+        <template v-else>
+          <!-- 全选栏 -->
+          <div class="select-all-bar">
+            <el-checkbox
+                v-model="selectAll"
+                :indeterminate="isIndeterminate"
+                @change="handleSelectAllChange"
+            >
+              全选 (已选 {{ selectedMessages.length }} / {{ messageList.length }})
+            </el-checkbox>
           </div>
 
-          <div class="message-content">
-            <div class="message-header">
-              <span class="message-title">{{ msg.title }}</span>
-              <el-tag
-                  v-if="msg.readFlag === 0"
-                  size="small"
+          <div
+              v-for="msg in messageList"
+              :key="msg.msgId"
+              class="message-item"
+              :class="{ 'is-unread': msg.readFlag === 0, 'is-selected': selectedMessages.includes(msg.msgId) }"
+          >
+            <div class="message-checkbox" @click.stop>
+              <el-checkbox
+                  v-model="selectedMessages"
+                  :label="msg.msgId"
+                  @change="handleSingleSelectChange"
+              />
+            </div>
+
+            <div class="message-content" @click="handleViewMessage(msg)">
+              <div class="message-icon">
+                <el-icon :size="24" :color="getMessageIcon(msg.msgType).color">
+                  <component :is="getMessageIcon(msg.msgType).icon" />
+                </el-icon>
+              </div>
+
+              <div class="message-body-wrapper">
+                <div class="message-header">
+                  <span class="message-title">{{ msg.title }}</span>
+                  <el-tag
+                      v-if="msg.readFlag === 0"
+                      size="small"
+                      type="danger"
+                      effect="plain"
+                  >
+                    未读
+                  </el-tag>
+                  <span class="message-time">{{ formatTime(msg.createTime) }}</span>
+                </div>
+
+                <div class="message-body">
+                  {{ msg.content }}
+                </div>
+
+                <div class="message-footer" v-if="msg.readTime">
+                  <span class="read-time">已读时间：{{ formatReadTime(msg.readTime) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="message-actions" @click.stop>
+              <el-button
                   type="danger"
-                  effect="plain"
+                  size="small"
+                  text
+                  @click="handleDeleteSingle(msg)"
+                  :icon="Delete"
               >
-                未读
-              </el-tag>
-              <span class="message-time">{{ formatTime(msg.createTime) }}</span>
-            </div>
-
-            <div class="message-body">
-              {{ msg.content }}
-            </div>
-
-            <div class="message-footer" v-if="msg.readTime">
-              <span class="read-time">已读时间：{{ formatReadTime(msg.readTime) }}</span>
+                删除
+              </el-button>
             </div>
           </div>
-        </div>
+        </template>
       </div>
 
       <!-- 分页 -->
@@ -120,9 +163,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Refresh, Bell, Warning, DocumentChecked, CircleClose } from '@element-plus/icons-vue'
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Refresh, Bell, Warning, DocumentChecked, CircleClose, Delete } from '@element-plus/icons-vue'
 import { messageApi } from '@/api/modules/message'
 import { useUserStore } from '@/stores/modules/user'
 
@@ -130,6 +173,9 @@ const userStore = useUserStore()
 const loading = ref(false)
 const messageList = ref([])
 const activeTab = ref('all')
+const selectedMessages = ref([])
+const selectAll = ref(false)
+const isIndeterminate = ref(false)
 
 const pagination = reactive({
   page: 1,
@@ -202,6 +248,9 @@ const fetchMessageList = async () => {
       messageList.value = res.data.list || []
       pagination.total = res.data.total || 0
       totalCount.value = res.data.total || 0
+
+      // 更新全选状态
+      updateSelectAllState()
     }
   } catch (error) {
     console.error('获取消息列表失败:', error)
@@ -225,6 +274,9 @@ const fetchUnreadCount = async () => {
 
 // 刷新
 const handleRefresh = () => {
+  selectedMessages.value = []
+  selectAll.value = false
+  isIndeterminate.value = false
   fetchMessageList()
   fetchUnreadCount()
 }
@@ -232,6 +284,9 @@ const handleRefresh = () => {
 // Tab 切换
 const handleTabChange = () => {
   pagination.page = 1
+  selectedMessages.value = []
+  selectAll.value = false
+  isIndeterminate.value = false
   fetchMessageList()
 }
 
@@ -268,6 +323,109 @@ const handleMarkAllAsRead = async () => {
   }
 }
 
+// 删除单条消息
+const handleDeleteSingle = async (msg) => {
+  try {
+    await ElMessageBox.confirm(
+        `确定要删除消息"${msg.title}"吗？`,
+        '删除确认',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+    )
+
+    await messageApi.deleteMessage(msg.msgId)
+    ElMessage.success('删除成功')
+
+    // 如果删除的是选中的消息，从选中列表中移除
+    const index = selectedMessages.value.indexOf(msg.msgId)
+    if (index > -1) {
+      selectedMessages.value.splice(index, 1)
+    }
+
+    await fetchMessageList()
+    await fetchUnreadCount()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除消息失败:', error)
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+// 批量删除消息
+const handleBatchDelete = async () => {
+  if (selectedMessages.value.length === 0) {
+    ElMessage.warning('请先选择要删除的消息')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+        `确定要删除选中的 ${selectedMessages.value.length} 条消息吗？`,
+        '批量删除确认',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+    )
+
+    await messageApi.batchDeleteMessages(selectedMessages.value)
+    ElMessage.success(`成功删除 ${selectedMessages.value.length} 条消息`)
+    selectedMessages.value = []
+    selectAll.value = false
+    isIndeterminate.value = false
+
+    await fetchMessageList()
+    await fetchUnreadCount()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('批量删除失败:', error)
+      ElMessage.error('批量删除失败')
+    }
+  }
+}
+
+// 全选状态变化
+const handleSelectAllChange = (val) => {
+  if (val) {
+    // 全选：将当前页所有消息ID加入选中列表
+    selectedMessages.value = messageList.value.map(msg => msg.msgId)
+  } else {
+    // 取消全选：清空选中列表
+    selectedMessages.value = []
+  }
+  isIndeterminate.value = false
+}
+
+// 单选状态变化
+const handleSingleSelectChange = () => {
+  updateSelectAllState()
+}
+
+// 更新全选状态
+const updateSelectAllState = () => {
+  const selectedCount = selectedMessages.value.length
+  const totalCount = messageList.value.length
+
+  if (totalCount === 0) {
+    selectAll.value = false
+    isIndeterminate.value = false
+  } else if (selectedCount === 0) {
+    selectAll.value = false
+    isIndeterminate.value = false
+  } else if (selectedCount < totalCount) {
+    selectAll.value = false
+    isIndeterminate.value = true
+  } else {
+    selectAll.value = true
+    isIndeterminate.value = false
+  }
+}
+
 onMounted(() => {
   fetchMessageList()
   fetchUnreadCount()
@@ -294,11 +452,19 @@ onMounted(() => {
   .message-list {
     min-height: 400px;
 
+    .select-all-bar {
+      padding: 12px 16px;
+      background-color: #f5f7fa;
+      border-bottom: 1px solid #e4e7ed;
+      font-size: 14px;
+      color: #606266;
+    }
+
     .message-item {
       display: flex;
+      align-items: center;
       padding: 16px;
       border-bottom: 1px solid #f0f0f0;
-      cursor: pointer;
       transition: all 0.3s;
 
       &:last-child {
@@ -322,8 +488,16 @@ onMounted(() => {
         }
       }
 
-      .message-icon {
-        margin-right: 16px;
+      &.is-selected {
+        background-color: #fef0f0;
+
+        &:hover {
+          background-color: #fde2e2;
+        }
+      }
+
+      .message-checkbox {
+        margin-right: 12px;
         display: flex;
         align-items: center;
       }
@@ -331,38 +505,57 @@ onMounted(() => {
       .message-content {
         flex: 1;
         min-width: 0;
+        display: flex;
+        cursor: pointer;
 
-        .message-header {
+        .message-icon {
+          margin-right: 16px;
           display: flex;
           align-items: center;
-          margin-bottom: 8px;
+          flex-shrink: 0;
+        }
 
-          .message-title {
-            font-size: 15px;
+        .message-body-wrapper {
+          flex: 1;
+          min-width: 0;
+
+          .message-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+
+            .message-title {
+              font-size: 15px;
+              color: #606266;
+              margin-right: 12px;
+            }
+
+            .message-time {
+              margin-left: auto;
+              font-size: 12px;
+              color: #909399;
+            }
+          }
+
+          .message-body {
+            font-size: 14px;
             color: #606266;
-            margin-right: 12px;
+            line-height: 1.6;
+            margin-bottom: 8px;
           }
 
-          .message-time {
-            margin-left: auto;
-            font-size: 12px;
-            color: #909399;
+          .message-footer {
+            .read-time {
+              font-size: 12px;
+              color: #909399;
+            }
           }
         }
+      }
 
-        .message-body {
-          font-size: 14px;
-          color: #606266;
-          line-height: 1.6;
-          margin-bottom: 8px;
-        }
-
-        .message-footer {
-          .read-time {
-            font-size: 12px;
-            color: #909399;
-          }
-        }
+      .message-actions {
+        margin-left: 12px;
+        flex-shrink: 0;
       }
     }
   }

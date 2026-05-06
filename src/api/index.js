@@ -34,63 +34,43 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
     (response) => {
-      const res = response.data
+        const res = response.data
 
-      // 业务状态码错误
-      if (res.code !== undefined && res.code !== HTTP_STATUS.SUCCESS) {
-        // 401：token过期
-        if (res.code === HTTP_STATUS.UNAUTHORIZED) {
-          handleTokenExpired()
-          return Promise.reject(new Error('登录已过期'))
+        // 业务状态码错误
+        if (res.code !== undefined && res.code !== HTTP_STATUS.SUCCESS) {
+            // 401：token过期
+            if (res.code === HTTP_STATUS.UNAUTHORIZED) {
+                // 如果是退出登录请求触发的 401，不提示错误
+                console.log('退出登录hahhahah')
+                if (response.config.isLogoutRequest) {
+                    return Promise.reject(res)
+                }
+                handleTokenExpired()
+                return Promise.reject(new Error('登录已过期'))
+            }
+
+            // 其他错误提示
+            ElMessage({
+                message: res.message || res.msg || '请求失败',
+                type: 'error',
+                duration: 3000
+            })
+
+            return Promise.reject(res)
         }
 
-        // 其他错误提示
-        ElMessage({
-          message: res.message || res.msg || '请求失败',
-          type: 'error',
-          duration: 3000
-        })
-
-        const error = new Error(res.message || '请求失败')
-        error.code = res.code
-        return Promise.reject(error)
-      }
-
-      return res
+        return res
     },
     (error) => {
-      console.error('响应异常:', error)
-
-      // HTTP 401 处理
-      if (error.response?.status === HTTP_STATUS.UNAUTHORIZED) {
-        handleTokenExpired()
-        return Promise.reject(error)
-      }
-
-      // 其他 HTTP 错误提示
-      let msg = '请求失败'
-      if (error.response) {
-        const status = error.response.status
-        const errMsg = error.response.data?.message || error.response.data?.msg
-        switch (status) {
-          case 403: msg = '权限不足'; break
-          case 404: msg = '接口不存在'; break
-          case 500: msg = '服务器异常'; break
-          default: msg = errMsg || `请求错误 ${status}`
+        console.error('响应异常:', error)
+        // 如果是退出登录请求触发的网络层 401，同样不提示
+        if (error.config && error.config.isLogoutRequest) {
+            return Promise.reject(error)
         }
-      } else if (error.request) {
-        msg = '网络异常，请检查连接'
-      } else {
-        msg = error.message
-      }
-
-      ElMessage({
-        message: msg,
-        type: 'error',
-        duration: 3000
-      })
-
-      return Promise.reject(error)
+        if (error.response && error.response.status === 401) {
+            handleTokenExpired()
+        }
+        return Promise.reject(error)
     }
 )
 

@@ -2,6 +2,39 @@
 import request from '../index'
 
 export const taskApi = {
+  // 创建任务
+  createTask(data) {
+    return request({
+      url: '/api/task',
+      method: 'post',
+      data
+    })
+  },
+
+  // 更新任务
+  updateTask(id, data) {
+    return request({
+      url: `/api/task/${id}`,
+      method: 'put',
+      data
+    })
+  },
+
+  // 删除任务
+  deleteTask(id) {
+    return request({
+      url: `/api/task/${id}`,
+      method: 'delete'
+    })
+  },
+
+  // 获取任务详情
+  getTaskDetail(id) {
+    return request({
+      url: `/api/task/${id}`,
+      method: 'get'
+    })
+  },
   // 分页查询任务列表（用于待办/已办）
   getTaskList(params) {
     return request({
